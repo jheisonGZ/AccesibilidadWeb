@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../services/firebase";
-import "../styles/auth.css";
+import "../styles/ResetPassword.css";
 
 export default function ResetPassword() {
   const [email, setEmail] = useState("");
@@ -13,6 +13,7 @@ export default function ResetPassword() {
     e.preventDefault();
     setMsg("");
     setError("");
+
     try {
       await sendPasswordResetEmail(auth, email.trim());
       setMsg("Revisa tu correo: te enviamos el enlace de recuperación.");
@@ -22,20 +23,31 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h1 className="auth-title">Recuperar contraseña</h1>
+    <div className="reset-page">
+      <div className="reset-card">
+        <h1 className="reset-title">Recuperar contraseña</h1>
 
-        <form className="auth-form" onSubmit={onSubmit}>
-          <input className="auth-input" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <form className="reset-form" onSubmit={onSubmit}>
+          <input
+            className="reset-input"
+            type="email"
+            placeholder="Correo"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-          {msg && <div className="auth-success">{msg}</div>}
-          {error && <div className="auth-error">{error}</div>}
+          {msg && <div className="reset-success">{msg}</div>}
+          {error && <div className="reset-error">{error}</div>}
 
-          <button className="auth-button">Enviar enlace</button>
+          <button className="reset-button">
+            Enviar enlace
+          </button>
 
-          <p className="auth-footer">
-            <Link className="auth-link" to="/">Volver al login</Link>
+          <p className="reset-footer">
+            <Link className="reset-link" to="/">
+              Volver al login
+            </Link>
           </p>
         </form>
       </div>

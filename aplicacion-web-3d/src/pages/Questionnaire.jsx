@@ -76,7 +76,7 @@ export default function Questionnaire() {
     );
     console.log("✅ assessment creado");
     console.log("✅ Guardado en Firestore OK");
-    navigate("/avatar");
+    navigate("/home/avatar");
   } catch (e) {
     console.error("❌ Error guardando en Firestore:", e);
   }

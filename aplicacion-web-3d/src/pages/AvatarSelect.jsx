@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { auth, db } from "../services/firebase";
+import { doc, setDoc } from "firebase/firestore";
+
+
 
 const AVATARS = [
   { id: "chibi-1", name: "Chibi 1", emoji: "🧑‍🎓" },
@@ -10,11 +14,30 @@ const AVATARS = [
 export default function AvatarSelect() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState("chibi-1");
+  const [loading, setLoading] = useState(false);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      navigate("/");
+      return;
+    }
+
+    await setDoc(
+      doc(db, "users", user.uid),
+      { avatar: selected },
+      { merge: true }
+    );
+
     localStorage.setItem("avatar", selected);
-    navigate("/scene");
-  };
+
+    navigate("/home/scene");
+  } catch (error) {
+    console.error("Error guardando avatar:", error);
+  }
+};
+
 
   return (
     <div style={{ padding: 24 }}>
@@ -32,6 +55,7 @@ export default function AvatarSelect() {
               border: selected === a.id ? "2px solid black" : "1px solid #ccc",
               minWidth: 120,
               cursor: "pointer",
+              background: selected === a.id ? "#f0f0f0" : "white",
             }}
             aria-pressed={selected === a.id}
           >
@@ -41,8 +65,12 @@ export default function AvatarSelect() {
         ))}
       </div>
 
-      <button onClick={handleContinue} style={{ marginTop: 24 }}>
-        Entrar al escenario 3D
+      <button
+        onClick={handleContinue}
+        style={{ marginTop: 24 }}
+        disabled={loading}
+      >
+        {loading ? "Guardando..." : "Entrar al escenario 3D"}
       </button>
     </div>
   );

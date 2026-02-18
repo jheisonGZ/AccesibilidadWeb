@@ -1,0 +1,129 @@
+
+/* Reset seguro */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Página completa */
+.register-page {
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+
+  display: grid;
+  place-items: center;
+
+  padding: 24px;
+
+  /* Fondo */
+  background-image: url("../assets/images/crear.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  /* Transición natural */
+  animation: fadeIn 0.8s ease forwards;
+}
+
+/* Tarjeta glass */
+.register-card {
+  width: min(420px, 100%);
+  padding: 28px 26px;
+  border-radius: 18px;
+
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+
+  color: white;
+}
+
+/* Título */
+.register-title {
+  margin: 0 0 18px;
+  font-size: 28px;
+}
+
+/* Formulario */
+.register-form {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Inputs */
+.register-input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  outline: none;
+
+  background: rgba(255, 255, 255, 0.10);
+  color: white;
+}
+
+.register-input::placeholder {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Botón */
+.register-button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 6px;
+
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Error */
+.register-error {
+  margin-bottom: 10px;
+  color: #ffb3b3;
+  font-size: 14px;
+}
+
+/* Footer */
+.register-footer {
+  margin-top: 22px;
+  font-size: 14px;
+}
+
+.register-link {
+  color: white;
+  font-weight: 600;
+  text-decoration: underline;
+  margin-left: 6px; /* separa un poco de "¿Ya tienes cuenta?" */
+}
+
+/* Animación suave */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .register-card {
+    padding: 20px;
+    border-radius: 14px;
+  }
+
+  .register-title {
+    font-size: 22px;
+  }
+}

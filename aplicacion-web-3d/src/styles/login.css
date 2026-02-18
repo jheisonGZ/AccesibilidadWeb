@@ -1,0 +1,145 @@
+/* Reset general para evitar desbordamientos */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* Contenedor principal de la página */
+.login-page {
+  height: 100dvh; /* Altura exacta del viewport moderno */
+  width: 100%;
+  overflow: hidden; /* Elimina scroll */
+
+  display: grid;
+  place-items: center;
+
+  padding: 24px;
+
+  background-image: url("../assets/images/login.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Caja del formulario */
+.wrapper {
+  width: min(420px, 100%);
+  padding: 28px 26px;
+  border-radius: 18px;
+
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+
+  color: white;
+}
+
+/* Título */
+.wrapper h1 {
+  margin: 0 0 18px;
+  font-size: 28px;
+}
+
+/* Contenedor de inputs */
+.input-box {
+  margin: 12px 0;
+}
+
+/* Inputs */
+.input-box input {
+  width: 100%;
+  padding: 12px;
+
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  outline: none;
+
+  background: rgba(255, 255, 255, 0.10);
+  color: white;
+}
+
+/* Placeholder */
+.input-box input::placeholder {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Enlace olvidar contraseña */
+.remember-forgot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+  margin-bottom: 10px;
+}
+
+.remember-forgot a {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+/* Botones */
+.btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Botón Google */
+.btn-google {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* Mensaje de error */
+.login-error {
+  color: #ffb3b3;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+/* Link de registro */
+.register-link {
+  margin-top: 14px;
+  font-size: 14px;
+}
+
+.register-link a {
+  color: white;
+  font-weight: 600;
+  text-decoration: underline;
+   margin-left: 17px; /* separa un poco de "¿Ya tienes cuenta?" */
+}
+
+/* Texto pequeño inferior */
+.login-mini {
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* Ajustes para pantallas pequeñas */
+@media (max-width: 480px) {
+  .wrapper {
+    padding: 20px;
+    border-radius: 14px;
+  }
+
+  .wrapper h1 {
+    font-size: 22px;
+  }
+}
