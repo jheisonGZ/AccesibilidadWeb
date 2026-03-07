@@ -4,21 +4,16 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    assetsInlineLimit: 0,      // nunca inlinea assets al bundle
+    assetsInlineLimit: 0,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor:   ["react", "react-dom", "react-router-dom"],
-          firebase: ["firebase/app", "firebase/auth", "firebase/firestore"],
-          three:    ["three", "@react-three/fiber", "@react-three/drei"],
+        manualChunks: (id) => {
+          if (id.includes("firebase"))           return "firebase";
+          if (id.includes("three") || id.includes("@react-three")) return "three";
+          if (id.includes("node_modules"))       return "vendor";
         },
       },
-    },
-  },
-  server: {
-    warmup: {
-      clientFiles: ["./src/pages/Login.jsx"],
     },
   },
 })
