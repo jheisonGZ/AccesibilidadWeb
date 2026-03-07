@@ -23,7 +23,7 @@ export default function Login() {
     if (!v) return;
 
     // Carga diferida — el video NO bloquea el render inicial
-    v.src = "/video/login.mp4"; // ← mueve el video a /public/video/login.mp4
+    v.src = "public/video/login.mp4"; // ← mueve el video a /public/video/login.mp4
     v.load();
 
     const onReady = () => setVideoReady(true);
