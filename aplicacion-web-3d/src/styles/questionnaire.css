@@ -17,7 +17,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url("/src/assets/images/clasi.png");
+  background-image: url("/src/assets/images/clasi.webp");
   background-size: cover;
   background-position: center;
   filter: blur(7px) brightness(0.4);

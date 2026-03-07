@@ -28,7 +28,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url("/src/assets/images/dashboard.png");
+  background-image: url("/src/assets/images/dashboard.webp");
   background-size: cover;
   background-position: center;
   filter: blur(6px) brightness(0.5);

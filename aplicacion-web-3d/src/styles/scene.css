@@ -1,0 +1,264 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   scene.hud.css — src/styles/scene.hud.css
+   Estilos del HUD estilo videojuego para Scene.jsx
+───────────────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+/* ── PANEL BASE ── */
+.hud-panel {
+  position: absolute;
+  z-index: 20;
+  background: linear-gradient(135deg, rgba(0,8,16,0.82) 0%, rgba(0,16,28,0.75) 100%);
+  border: 1px solid rgba(0,200,255,0.18);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 12px 14px;
+  border-radius: 4px;
+  min-width: 220px;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+
+/* Línea decorativa superior */
+.hud-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,220,255,0.6), transparent);
+}
+
+/* Esquina decorativa inferior derecha */
+.hud-panel::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 8px; height: 8px;
+  border-bottom: 1px solid rgba(0,200,255,0.4);
+  border-right:  1px solid rgba(0,200,255,0.4);
+}
+
+/* Posiciones */
+.hud-tl { top: 16px; left: 16px; }
+.hud-tr { top: 16px; right: 16px; text-align: right; }
+
+/* ── JUGADOR ── */
+.hud-player-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0,200,255,0.12);
+}
+
+.hud-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 2px solid rgba(0,200,255,0.4);
+  background: rgba(0,200,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.hud-initial {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #00eaff;
+}
+
+.hud-level-badge {
+  position: absolute;
+  bottom: -3px; right: -3px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  color: #000;
+  border: 1px solid rgba(0,0,0,0.5);
+}
+
+.hud-player-info { display: flex; flex-direction: column; }
+
+.hud-callsign {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 2px;
+  color: #e0f4ff;
+  line-height: 1;
+}
+
+.hud-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  margin-top: 3px;
+}
+
+.hud-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  animation: hud-pulse 1s ease-in-out infinite;
+}
+
+@keyframes hud-pulse {
+  0%, 100% { opacity: 1;   transform: scale(1);   }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* ── BARRAS ── */
+.hud-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.hud-bar-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1px;
+  width: 52px;
+  flex-shrink: 0;
+}
+
+.hud-bar-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.hud-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.8s ease;
+}
+
+.hud-bar-xp {
+  background: linear-gradient(90deg, #7c3aed88, #a78bfa);
+  box-shadow: 0 0 8px #a78bfa88;
+}
+
+.hud-bar-val {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── ZONA ACTIVA ── */
+.hud-zone {
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 7px 10px;
+  margin-bottom: 8px;
+  background: rgba(0,0,0,0.3);
+}
+
+.hud-zone-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 4px;
+}
+
+.hud-zone-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* ── SCORE ── */
+.hud-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0,200,255,0.10);
+}
+
+.hud-score-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.hud-trend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+}
+
+/* ── BOTONES ── */
+.hud-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.hud-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 3px;
+  border: 1px solid;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+}
+
+.hud-btn-primary {
+  background: rgba(0,200,255,0.10);
+  border-color: rgba(0,200,255,0.35);
+  color: #00eaff;
+}
+
+.hud-btn-primary:hover {
+  background: rgba(0,200,255,0.22);
+  border-color: rgba(0,200,255,0.7);
+  box-shadow: 0 0 12px rgba(0,200,255,0.3);
+  color: #fff;
+}
+
+.hud-btn-danger {
+  background: rgba(255,60,80,0.10);
+  border-color: rgba(255,60,80,0.35);
+  color: #ff4466;
+}
+
+.hud-btn-danger:hover {
+  background: rgba(255,60,80,0.22);
+  border-color: rgba(255,60,80,0.7);
+  box-shadow: 0 0 12px rgba(255,60,80,0.3);
+  color: #fff;
+}

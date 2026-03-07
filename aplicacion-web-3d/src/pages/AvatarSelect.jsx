@@ -5,7 +5,10 @@ import { doc, setDoc } from "firebase/firestore";
 import Swal from "sweetalert2";
 import { ArrowRight, Check } from "lucide-react";
 import "../styles/avatar.css";
-import LoadingScreen from "../components/LoadingScreen";
+
+// ── usePageReady: le avisa al layout que esta página ya montó ────────────────
+// Esto apaga el LoadingScreen que activó Questionnaire al navegar aquí.
+import { useAppNavigate, usePageReady } from "../providers/NavigationContext";
 
 const AVATARS = [
   {
@@ -43,9 +46,7 @@ const AvatarImg = ({ src, name, gender }) => {
   return (
     <div className="av-img-wrap">
       <img
-        src={src}
-        alt={name}
-        className="av-img"
+        src={src} alt={name} className="av-img"
         onError={(e) => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }}
       />
       <div className="av-img-fallback" style={{ display: "none" }}>
@@ -64,11 +65,15 @@ const AvatarImg = ({ src, name, gender }) => {
 };
 
 export default function AvatarSelect() {
-  const navigate  = useNavigate();
-  const [selected,   setSelected]   = useState(null);
-  const [loading,    setLoading]    = useState(false);
-  const [filter,     setFilter]     = useState("Todos");
-  const [navigating, setNavigating] = useState(false); // ← controla LoadingScreen
+  const rawNavigate = useNavigate();
+  const navigate    = useAppNavigate();
+
+  // ── CLAVE: apaga el LoadingScreen cuando esta página termina de montar ────
+  usePageReady();
+
+  const [selected, setSelected] = useState(null);
+  const [loading,  setLoading]  = useState(false);
+  const [filter,   setFilter]   = useState("Todos");
 
   const filtered = filter === "Todos" ? AVATARS : AVATARS.filter(a => a.gender === filter);
 
@@ -78,7 +83,7 @@ export default function AvatarSelect() {
 
     try {
       const user = auth.currentUser;
-      if (!user) { navigate("/"); return; }
+      if (!user) { rawNavigate("/"); return; }
 
       await setDoc(doc(db, "users", user.uid), { avatar: selected }, { merge: true });
       localStorage.setItem("avatar", selected);
@@ -97,32 +102,19 @@ export default function AvatarSelect() {
         timerProgressBar: true,
       });
 
-      // ── Mostrar LoadingScreen antes de navegar ──
-      setNavigating(true);
-      setTimeout(() => navigate("/home/scene"), 2200);
+      navigate("/home/scene", "Cargando escenario 3D");
 
     } catch (e) {
       console.error(e);
       setLoading(false);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "No se pudo guardar el avatar.",
-        confirmButtonColor: "#2c5364",
-      });
+      Swal.fire({ icon: "error", title: "Error", text: "No se pudo guardar el avatar.", confirmButtonColor: "#2c5364" });
     }
   };
-
-  // ── LOADING SCREEN de transición ──
-  if (navigating) {
-    return <LoadingScreen message="Cargando escenario 3D" />;
-  }
 
   return (
     <div className="av-page">
       <div className="av-container">
 
-        {/* ENCABEZADO */}
         <div className="av-header">
           <h1 className="av-title">Elige tu avatar</h1>
           <p className="av-subtitle">
@@ -130,7 +122,6 @@ export default function AvatarSelect() {
           </p>
         </div>
 
-        {/* FILTROS */}
         <div className="av-filters">
           {["Todos", "Masculino", "Femenino"].map(f => (
             <button
@@ -143,7 +134,6 @@ export default function AvatarSelect() {
           ))}
         </div>
 
-        {/* GRID DE AVATARES */}
         <div className="av-grid">
           {filtered.map(av => (
             <div
@@ -152,9 +142,7 @@ export default function AvatarSelect() {
               onClick={() => setSelected(av.id)}
             >
               {selected === av.id && (
-                <div className="av-check">
-                  <Check size={14} strokeWidth={3} />
-                </div>
+                <div className="av-check"><Check size={14} strokeWidth={3} /></div>
               )}
               <AvatarImg src={av.img} name={av.name} gender={av.gender} />
               <div className="av-info">
@@ -166,12 +154,7 @@ export default function AvatarSelect() {
           ))}
         </div>
 
-        {/* BOTÓN */}
-        <button
-          className="av-btn"
-          onClick={handleContinue}
-          disabled={!selected || loading}
-        >
+        <button className="av-btn" onClick={handleContinue} disabled={!selected || loading}>
           {loading
             ? "Guardando..."
             : selected

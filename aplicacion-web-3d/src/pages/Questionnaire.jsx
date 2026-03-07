@@ -8,7 +8,12 @@ import {
   Heart, AlertTriangle, AlertCircle, ArrowRight, ArrowLeft, CheckCircle
 } from "lucide-react";
 import "../styles/questionnaire.css";
-import LoadingScreen from "../components/LoadingScreen";
+
+// ── Navegación global con LoadingScreen ───────────────────────────────────
+// useAppNavigate reemplaza al useNavigate de react-router.
+// Muestra el LoadingScreen en el layout ANTES de cambiar de ruta,
+// evitando cualquier flash blanco entre pantallas.
+import { useAppNavigate } from "../providers/NavigationContext";
 
 const QUESTIONS = [
   { text: "Me he sentido nervioso/a, ansioso/a o con los nervios de punta.",         icon: Wind },
@@ -35,15 +40,16 @@ const classify = (score) => {
 };
 
 export default function Questionnaire() {
-  const navigate = useNavigate();
+  // rawNavigate solo para redirecciones de error (ej: usuario no logueado)
+  const rawNavigate = useNavigate();
 
-  const [step,       setStep]       = useState(0);
-  const [answers,    setAnswers]    = useState(Array(QUESTIONS.length).fill(null));
-  const [saving,     setSaving]     = useState(false);
-  const [done,       setDone]       = useState(false);
+  // navigate con LoadingScreen — usar para transiciones normales de flujo
+  const navigate = useAppNavigate();
 
-  // Controla si mostrar el LoadingScreen de transición
-  const [navigating, setNavigating] = useState(false);
+  const [step,    setStep]    = useState(0);
+  const [answers, setAnswers] = useState(Array(QUESTIONS.length).fill(null));
+  const [saving,  setSaving]  = useState(false);
+  const [done,    setDone]    = useState(false);
 
   const score    = useMemo(() => answers.reduce((a, b) => a + (b ?? 0), 0), [answers]);
   const result   = useMemo(() => classify(score), [score]);
@@ -73,7 +79,7 @@ export default function Questionnaire() {
 
     try {
       const user = auth.currentUser;
-      if (!user) { navigate("/"); return; }
+      if (!user) { rawNavigate("/"); return; }
 
       await setDoc(
         doc(db, "users", user.uid),
@@ -96,10 +102,10 @@ export default function Questionnaire() {
         iconColor: result.color,
       });
 
-      // Activar LoadingScreen — la navegación ocurre dentro del componente
-      // via onComplete, SOLO cuando la barra llega al 100 %.
-      // Esto elimina el destello blanco entre pantallas.
-      setNavigating(true);
+      // ── Navega con LoadingScreen ─────────────────────────────────────────
+      // El LoadingScreen se muestra ENCIMA del layout actual (no desmonta nada),
+      // y navega solo cuando la barra llega al 100%. Sin flash blanco.
+      navigate("/home/avatar", "Preparando tu avatar");
 
     } catch (e) {
       console.error(e);
@@ -112,18 +118,6 @@ export default function Questionnaire() {
       });
     }
   };
-
-  // ── LoadingScreen: máxima prioridad de render ─────────────────────────────
-  // onComplete se dispara cuando la barra llega al 100 %,
-  // garantizando que nunca haya un frame blanco.
-  if (navigating) {
-    return (
-      <LoadingScreen
-        message="Preparando tu avatar"
-        onComplete={() => navigate("/home/avatar")}
-      />
-    );
-  }
 
   // ── Pantalla de resultado ─────────────────────────────────────────────────
   if (done) {

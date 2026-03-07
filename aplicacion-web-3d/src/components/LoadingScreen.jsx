@@ -1,34 +1,21 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// LoadingScreen.jsx
-// Componente de pantalla de carga global.
+// LoadingScreen.jsx — src/components/LoadingScreen.jsx
 //
-// DESCRIPCIÓN:
-//   Muestra un fondo desenfocado (imagen del bosque) con overlay oscuro,
-//   una barra de progreso animada y un porcentaje — todo alineado en la
-//   parte inferior de la pantalla.
+// Componente PURAMENTE VISUAL — solo muestra la animación.
+// La navegación y el cierre del loading son responsabilidad de
+// NavigationContext + usePageReady(), NO de este componente.
 //
-// USO BÁSICO:
-//   import LoadingScreen from "../components/LoadingScreen";
-//   if (loading) return <LoadingScreen />;
-//
-// USO CON NAVEGACIÓN AUTOMÁTICA (recomendado):
-//   <LoadingScreen
-//     message="Preparando tu avatar"
-//     onComplete={() => navigate("/home/avatar")}
-//   />
-//
-//   → La navegación ocurre SOLO después de que la barra llega al 100 %,
-//     eliminando el destello blanco entre pantallas.
+// USO:
+//   {isLoading && <LoadingScreen message={message} />}
 //
 // PROPS:
-//   message     {string}    Texto sobre la barra.        Default: "Cargando"
-//   onComplete  {function}  Callback al llegar al 100%.  Default: undefined
+//   message {string} — texto sobre la barra. Default: "Cargando"
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";
-import loadingBg from "../assets/images/loading.png";
+import loadingBg from "../assets/images/loading.webp";
 
-export default function LoadingScreen({ message = "Cargando", onComplete }) {
+export default function LoadingScreen({ message = "Cargando" }) {
 
   const [progress, setProgress] = useState(0);
   const [dots,     setDots]     = useState(0);
@@ -40,16 +27,11 @@ export default function LoadingScreen({ message = "Cargando", onComplete }) {
       500
     );
 
-    // Progreso: sube rápido hasta 80%, luego más lento, y llega al 100%
-    // en ~2 segundos totales para dar sensación de carga real.
-    const progressTimer = setInterval(() => {
-      setProgress(v => {
-        if (v >= 100) return 100;
-        // Más rápido al inicio, más lento al final
-        const increment = v < 80 ? Math.random() * 5 : Math.random() * 2;
-        return Math.min(v + increment, 100);
-      });
-    }, 80);
+    // Barra sube hasta 85% y se detiene — NavigationContext decide cuándo cerrar
+    const progressTimer = setInterval(
+      () => setProgress(v => v < 85 ? Math.min(v + Math.random() * 4, 85) : v),
+      120
+    );
 
     return () => {
       clearInterval(dotsTimer);
@@ -57,25 +39,15 @@ export default function LoadingScreen({ message = "Cargando", onComplete }) {
     };
   }, []);
 
-  // Cuando llega al 100%, espera 300ms (para que se vea completa) y navega
-  useEffect(() => {
-    if (progress >= 100 && onComplete) {
-      const timer = setTimeout(onComplete, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [progress, onComplete]);
-
   return (
     <div style={styles.root}>
       <style>{shimmerCSS}</style>
 
-      {/* Fondo desenfocado — fallback oscuro evita destello blanco */}
+      {/* Fondo desenfocado — color oscuro como fallback instantáneo */}
       <div style={{ ...styles.background, backgroundImage: `url(${loadingBg})` }} />
-
-      {/* Overlay oscuro semitransparente */}
       <div style={styles.overlay} />
 
-      {/* Bloque inferior: mensaje + barra + porcentaje */}
+      {/* Bloque inferior */}
       <div style={styles.bottomBlock}>
 
         <p style={styles.message}>
@@ -100,13 +72,7 @@ export default function LoadingScreen({ message = "Cargando", onComplete }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ESTILOS
-// ─────────────────────────────────────────────────────────────────────────────
-
 const styles = {
-
-  // Fondo oscuro instantáneo — evita destello blanco mientras carga la imagen
   root: {
     position   : "fixed",
     inset      : 0,
@@ -114,7 +80,6 @@ const styles = {
     overflow   : "hidden",
     background : "#080e08",
   },
-
   background: {
     position           : "absolute",
     inset              : 0,
@@ -123,13 +88,11 @@ const styles = {
     filter             : "blur(10px) brightness(0.55)",
     transform          : "scale(1.08)",
   },
-
   overlay: {
     position   : "absolute",
     inset      : 0,
     background : "rgba(6, 10, 6, 0.52)",
   },
-
   bottomBlock: {
     position      : "absolute",
     bottom        : 48,
@@ -142,7 +105,6 @@ const styles = {
     alignItems    : "center",
     gap           : 14,
   },
-
   message: {
     margin        : 0,
     fontFamily    : "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -153,13 +115,11 @@ const styles = {
     color         : "rgba(220, 230, 220, 0.70)",
     textShadow    : "0 2px 12px rgba(0,0,0,0.9)",
   },
-
   dotsSpan: {
     display   : "inline-block",
     width     : "1.2em",
     textAlign : "left",
   },
-
   track: {
     position     : "relative",
     width        : "100%",
@@ -168,7 +128,6 @@ const styles = {
     background   : "rgba(255, 255, 255, 0.10)",
     overflow     : "hidden",
   },
-
   fill: {
     position     : "absolute",
     top          : 0,
@@ -178,7 +137,6 @@ const styles = {
     borderRadius : 99,
     transition   : "width 0.15s ease",
   },
-
   tip: {
     position     : "absolute",
     right        : 0,
@@ -190,7 +148,6 @@ const styles = {
     background   : "#90e8c0",
     boxShadow    : "0 0 8px 3px rgba(100, 220, 160, 0.75)",
   },
-
   percentage: {
     margin        : 0,
     fontFamily    : "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -200,17 +157,12 @@ const styles = {
     color         : "rgba(180, 210, 190, 0.55)",
     textShadow    : "0 1px 8px rgba(0,0,0,0.8)",
   },
-
   percentSign: {
     fontSize  : "80%",
     opacity   : 0.6,
     marginLeft: 1,
   },
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ANIMACIÓN SHIMMER
-// ─────────────────────────────────────────────────────────────────────────────
 
 const shimmerCSS = `
   .ls-shimmer {
