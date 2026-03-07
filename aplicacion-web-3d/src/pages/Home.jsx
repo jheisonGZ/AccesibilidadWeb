@@ -4,11 +4,10 @@ import ChatBotUI from "../components/ChatBotUI";
 
 export default function Home() {
   return (
-    <div style={{ minHeight: "100vh" }}>
+    // position relative para que el TopBar absolute se posicione aquí
+    <div style={{ minHeight: "100vh", position: "relative" }}>
       <TopBar />
-      <div style={{ padding: 16 }}>
-        <Outlet />
-      </div>
+      <Outlet />
       <ChatBotUI />
     </div>
   );

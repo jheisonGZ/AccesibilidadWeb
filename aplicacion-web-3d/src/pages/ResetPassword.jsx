@@ -2,23 +2,39 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../services/firebase";
+import Swal from "sweetalert2";
 import "../styles/ResetPassword.css";
 
 export default function ResetPassword() {
   const [email, setEmail] = useState("");
-  const [msg, setMsg] = useState("");
-  const [error, setError] = useState("");
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setMsg("");
-    setError("");
 
     try {
       await sendPasswordResetEmail(auth, email.trim());
-      setMsg("Revisa tu correo: te enviamos el enlace de recuperación.");
+
+      // ✅ Éxito — tono azulito
+      await Swal.fire({
+        icon: "info",
+        title: "¡Correo enviado!",
+        text: "Revisa tu bandeja de entrada y sigue el enlace para recuperar tu contraseña.",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#2f80ed",
+        iconColor: "#2f80ed",
+        background: "#f0f7ff",
+        color: "#1a3a5c",
+      });
+
     } catch {
-      setError("No se pudo enviar el correo. Revisa el email.");
+      // ❌ Error
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo enviar el correo. Revisa que el email sea correcto.",
+        confirmButtonText: "Intentar de nuevo",
+        confirmButtonColor: "#2f80ed",
+      });
     }
   };
 
@@ -36,9 +52,6 @@ export default function ResetPassword() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-
-          {msg && <div className="reset-success">{msg}</div>}
-          {error && <div className="reset-error">{error}</div>}
 
           <button className="reset-button">
             Enviar enlace

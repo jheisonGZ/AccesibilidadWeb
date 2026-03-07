@@ -2,127 +2,249 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../services/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-
+import Swal from "sweetalert2";
+import {
+  Wind, Brain, BookOpen, BatteryLow, Zap, CloudRain, Activity,
+  Heart, AlertTriangle, AlertCircle, ArrowRight, ArrowLeft, CheckCircle
+} from "lucide-react";
+import "../styles/questionnaire.css";
+import LoadingScreen from "../components/LoadingScreen";
 
 const QUESTIONS = [
-  "Me he sentido nervioso/a o ansioso/a últimamente.",
-  "He tenido dificultad para relajarme.",
-  "Me ha costado concentrarme en mis actividades.",
-  "He sentido tensión o irritabilidad.",
-  "He sentido que necesito un descanso mental.",
+  { text: "Me he sentido nervioso/a, ansioso/a o con los nervios de punta.",         icon: Wind },
+  { text: "No he podido dejar de preocuparme o controlar mis preocupaciones.",        icon: Brain },
+  { text: "Me ha costado concentrarme en mis actividades académicas.",                icon: BookOpen },
+  { text: "Me he sentido agotado/a o con poca energía durante el día.",               icon: BatteryLow },
+  { text: "He sentido tensión muscular, irritabilidad o dificultad para relajarme.",  icon: Zap },
+  { text: "He tenido poco interés o placer en hacer las cosas que antes disfrutaba.", icon: CloudRain },
+  { text: "He sentido que necesito un descanso mental urgente.",                      icon: Activity },
 ];
+
+const OPTIONS = [
+  { value: 0, label: "Nunca",           sublabel: "No me ha ocurrido" },
+  { value: 1, label: "Varios días",     sublabel: "Algunas veces" },
+  { value: 2, label: "Más de la mitad", sublabel: "Con frecuencia" },
+  { value: 3, label: "Casi siempre",    sublabel: "La mayoría de días" },
+];
+
+const classify = (score) => {
+  if (score >= 15) return { label: "Ansiedad elevada",  Icon: AlertCircle,   color: "#f87171", key: "ansiedad", desc: "Se recomienda buscar apoyo profesional." };
+  if (score >= 10) return { label: "Estrés moderado",   Icon: AlertTriangle, color: "#fbbf24", key: "estres",   desc: "Considera técnicas de manejo del estrés." };
+  if (score >= 5)  return { label: "Leve malestar",     Icon: Activity,      color: "#34d399", key: "leve",     desc: "Pequeños ajustes pueden ayudarte." };
+  return                  { label: "Bienestar estable", Icon: Heart,         color: "#7ecfff", key: "neutro",   desc: "¡Vas muy bien! Sigue así." };
+};
 
 export default function Questionnaire() {
   const navigate = useNavigate();
-  const [answers, setAnswers] = useState(Array(QUESTIONS.length).fill(0)); // 0..4
 
-  const score = useMemo(() => answers.reduce((a, b) => a + b, 0), [answers]);
+  const [step,       setStep]       = useState(0);
+  const [answers,    setAnswers]    = useState(Array(QUESTIONS.length).fill(null));
+  const [saving,     setSaving]     = useState(false);
+  const [done,       setDone]       = useState(false);
 
-  const classification = useMemo(() => {
-    if (score >= 15) return "ansiedad";
-    if (score >= 8) return "estres";
-    return "neutro";
-  }, [score]);
+  // Controla si mostrar el LoadingScreen de transición
+  const [navigating, setNavigating] = useState(false);
 
-  const handleChange = (idx, value) => {
+  const score    = useMemo(() => answers.reduce((a, b) => a + (b ?? 0), 0), [answers]);
+  const result   = useMemo(() => classify(score), [score]);
+  const progress = ((step) / QUESTIONS.length) * 100;
+
+  const current = QUESTIONS[step];
+  const Icon    = current?.icon;
+
+  const handleSelect = (value) => {
     const next = [...answers];
-    next[idx] = Number(value);
+    next[step] = value;
     setAnswers(next);
+    setTimeout(() => {
+      if (step < QUESTIONS.length - 1) setStep(step + 1);
+      else setDone(true);
+    }, 300);
+  };
+
+  const handleBack = () => {
+    if (done) { setDone(false); return; }
+    if (step > 0) setStep(step - 1);
   };
 
   const handleSubmit = async () => {
-  localStorage.setItem("emotion", classification);
+    setSaving(true);
+    localStorage.setItem("emotion", result.key);
 
-  try {
-    const user = auth.currentUser;
-    console.log("currentUser:", user);
+    try {
+      const user = auth.currentUser;
+      if (!user) { navigate("/"); return; }
 
-    if (!user) {
+      await setDoc(
+        doc(db, "users", user.uid),
+        { email: user.email, lastEmotion: result.key, updatedAt: serverTimestamp() },
+        { merge: true }
+      );
+      await setDoc(
+        doc(db, "users", user.uid, "assessments", String(Date.now())),
+        { email: user.email, score, classification: result.key, createdAt: serverTimestamp() }
+      );
 
-      console.log("UID:", user.uid);
-      console.log("Email:", user.email);
+      await Swal.fire({
+        icon: "success",
+        title: result.label,
+        html: `Tu puntaje fue <b>${score} / 21</b>.<br/>${result.desc}`,
+        confirmButtonText: "Elegir avatar",
+        confirmButtonColor: "#2c5364",
+        background: "#0f2027",
+        color: "#fff",
+        iconColor: result.color,
+      });
 
-      console.warn("No hay usuario autenticado. Te envío a login.");
-      navigate("/");
-      return;
+      // Activar LoadingScreen — la navegación ocurre dentro del componente
+      // via onComplete, SOLO cuando la barra llega al 100 %.
+      // Esto elimina el destello blanco entre pantallas.
+      setNavigating(true);
+
+    } catch (e) {
+      console.error(e);
+      setSaving(false);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo guardar. Intenta de nuevo.",
+        confirmButtonColor: "#2c5364",
+      });
     }
+  };
 
-    console.log("Guardando Firestore para UID:", user.uid);
-
-    // 1) Documento del usuario
-    await setDoc(
-      doc(db, "users", user.uid),
-      {
-        email: user.email,
-        lastEmotion: classification,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
+  // ── LoadingScreen: máxima prioridad de render ─────────────────────────────
+  // onComplete se dispara cuando la barra llega al 100 %,
+  // garantizando que nunca haya un frame blanco.
+  if (navigating) {
+    return (
+      <LoadingScreen
+        message="Preparando tu avatar"
+        onComplete={() => navigate("/home/avatar")}
+      />
     );
-
-      console.log("✅ user doc actualizado");
-
-
-    // 2) Historial
-    await setDoc(
-      doc(db, "users", user.uid, "assessments", String(Date.now())),
-      {
-        email: user.email,
-        score,
-        classification,
-        createdAt: serverTimestamp(),
-      }
-
-    );
-    console.log("✅ assessment creado");
-    console.log("✅ Guardado en Firestore OK");
-    navigate("/home/avatar");
-  } catch (e) {
-    console.error("❌ Error guardando en Firestore:", e);
   }
-};
 
-  return (
-    <div style={{ padding: 24 }}>
-      <h1>Autoevaluación emocional</h1>
-      <p>Responde rápido. Escala 0–4.</p>
-
-      <div style={{ display: "grid", gap: 16, maxWidth: 720 }}>
-        {QUESTIONS.map((q, idx) => (
-          <div
-            key={q}
-            style={{
-              border: "1px solid #444",
-              padding: 12,
-              borderRadius: 8,
-            }}
-          >
-            <p style={{ margin: 0, marginBottom: 8 }}>
-              {idx + 1}. {q}
-            </p>
-
-            <select
-              value={answers[idx]}
-              onChange={(e) => handleChange(idx, e.target.value)}
-            >
-              <option value={0}>0 - Nada</option>
-              <option value={1}>1 - Poco</option>
-              <option value={2}>2 - Moderado</option>
-              <option value={3}>3 - Alto</option>
-              <option value={4}>4 - Muy alto</option>
-            </select>
+  // ── Pantalla de resultado ─────────────────────────────────────────────────
+  if (done) {
+    const { Icon: ResIcon, label, color, desc } = result;
+    return (
+      <div className="q-page">
+        <div className="q-container q-result-screen">
+          <div className="q-result-icon-big" style={{ color }}>
+            <ResIcon size={64} strokeWidth={1.5} />
           </div>
-        ))}
-      </div>
+          <h2 className="q-result-title" style={{ color }}>{label}</h2>
+          <p className="q-result-desc">{desc}</p>
 
-      <div style={{ marginTop: 16 }}>
-        <strong>Puntaje:</strong> {score} | <strong>Clasificación:</strong>{" "}
-        {classification}
-      </div>
+          <div className="q-score-ring">
+            <svg viewBox="0 0 120 120" width="140" height="140">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="10"/>
+              <circle
+                cx="60" cy="60" r="50"
+                fill="none"
+                stroke={color}
+                strokeWidth="10"
+                strokeDasharray={`${(score / 21) * 314} 314`}
+                strokeLinecap="round"
+                transform="rotate(-90 60 60)"
+                style={{ transition: "stroke-dasharray 1s ease" }}
+              />
+            </svg>
+            <div className="q-score-center">
+              <span className="q-score-num" style={{ color }}>{score}</span>
+              <span className="q-score-max">/ 21</span>
+            </div>
+          </div>
 
-      <button onClick={handleSubmit} style={{ marginTop: 16 }}>
-        Continuar a elegir avatar
-      </button>
+          <div className="q-answers-summary">
+            {QUESTIONS.map((q, i) => {
+              const Q   = q.icon;
+              const opt = OPTIONS[answers[i]];
+              return (
+                <div className="q-summary-row" key={i}>
+                  <Q size={16} style={{ color: "#7ecfff", flexShrink: 0 }} />
+                  <span className="q-summary-q">{q.text}</span>
+                  <span className="q-summary-a" style={{ color }}>{opt?.label}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="q-result-actions">
+            <button className="q-btn-back" onClick={handleBack}>
+              <ArrowLeft size={16} /> Revisar
+            </button>
+            <button className="q-btn-submit" onClick={handleSubmit} disabled={saving}>
+              {saving
+                ? "Guardando..."
+                : <><CheckCircle size={18} /> Confirmar y continuar</>
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Pantalla de pregunta ──────────────────────────────────────────────────
+  return (
+    <div className="q-page">
+      <div className="q-container">
+
+        <div className="q-top">
+          <div className="q-step-label">
+            Pregunta <b>{step + 1}</b> de {QUESTIONS.length}
+          </div>
+          <div className="q-progress-bar">
+            <div className="q-progress-fill" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+
+        <div className="q-card-single" key={step}>
+          <div className="q-card-icon-wrap">
+            <Icon size={32} strokeWidth={1.5} />
+          </div>
+          <p className="q-card-question">{current.text}</p>
+          <p className="q-card-hint">¿Con qué frecuencia en los últimos 7 días?</p>
+
+          <div className="q-options-grid">
+            {OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                className={`q-option-card ${answers[step] === opt.value ? "selected" : ""}`}
+                onClick={() => handleSelect(opt.value)}
+              >
+                <span className="q-opt-value">{opt.value}</span>
+                <span className="q-opt-label">{opt.label}</span>
+                <span className="q-opt-sub">{opt.sublabel}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="q-nav">
+          <button className="q-btn-back" onClick={handleBack} disabled={step === 0}>
+            <ArrowLeft size={16} /> Anterior
+          </button>
+          {answers[step] !== null && step < QUESTIONS.length - 1 && (
+            <button className="q-btn-next" onClick={() => setStep(step + 1)}>
+              Siguiente <ArrowRight size={16} />
+            </button>
+          )}
+        </div>
+
+        <div className="q-dots">
+          {QUESTIONS.map((_, i) => (
+            <div
+              key={i}
+              className={`q-dot ${i === step ? "active" : ""} ${answers[i] !== null ? "answered" : ""}`}
+              onClick={() => setStep(i)}
+            />
+          ))}
+        </div>
+
+      </div>
     </div>
   );
 }

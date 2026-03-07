@@ -6,13 +6,12 @@ import { auth, db } from "../services/firebase";
 import AnxietyRoom from "../scenes/AnxietyRoom";
 import StressRoom from "../scenes/StressRoom";
 import NeutralRoom from "../scenes/NeutralRoom";
-
+import LoadingScreen from "../components/LoadingScreen";
 
 export default function Scene() {
   const navigate = useNavigate();
   const [emotion, setEmotion] = useState(null);
   const [loading, setLoading] = useState(true);
-  
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -34,7 +33,6 @@ export default function Scene() {
           const data = snap.data();
           setEmotion(data.lastEmotion || "neutro");
         } else {
-          // fallback por si el doc no existe
           setEmotion(localStorage.getItem("emotion") || "neutro");
         }
       } catch (e) {
@@ -48,26 +46,25 @@ export default function Scene() {
     load();
   }, [navigate]);
 
+  // ── LOADING SCREEN mientras carga la emoción desde Firestore ──
   if (loading) {
-    return <div style={{ padding: 20 }}>Cargando escena...</div>;
+    return <LoadingScreen message="Cargando escenario 3D" />;
   }
 
-  // Por ahora usamos BasicRoom para todos.
-  // Luego cambias según emoción.
   const SceneComponent =
-  emotion === "ansiedad" ? AnxietyRoom :
-  emotion === "estres" ? StressRoom :
-  NeutralRoom;
-  
+    emotion === "ansiedad" ? AnxietyRoom :
+    emotion === "estres"   ? StressRoom  :
+    NeutralRoom;
+
   return (
-  
     <div style={{ height: "100vh", position: "relative" }}>
+
+      {/* Botón logout */}
       <button
         onClick={handleLogout}
         style={{
           position: "absolute",
-          top: 16,
-          right: 16,
+          top: 16, right: 16,
           zIndex: 20,
           padding: "10px 14px",
           borderRadius: 12,
@@ -81,12 +78,11 @@ export default function Scene() {
         Logout
       </button>
 
-      {/* Debug rápido */}
+      {/* Debug emoción */}
       <div
         style={{
           position: "absolute",
-          top: 16,
-          left: 16,
+          top: 16, left: 16,
           zIndex: 20,
           padding: "8px 12px",
           borderRadius: 12,
