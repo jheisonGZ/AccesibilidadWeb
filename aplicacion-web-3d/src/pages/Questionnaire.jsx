@@ -1,34 +1,40 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../services/firebase";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { 
+  doc, 
+  setDoc, 
+  addDoc, 
+  collection, 
+  getDocs, 
+  orderBy, 
+  query, 
+  limit, 
+  serverTimestamp,
+  increment
+} from "firebase/firestore";
 import Swal from "sweetalert2";
 import {
   Wind, Brain, BookOpen, BatteryLow, Zap, CloudRain, Activity,
   Heart, AlertTriangle, AlertCircle, ArrowRight, ArrowLeft, CheckCircle
 } from "lucide-react";
 import "../styles/questionnaire.css";
-
-// ── Navegación global con LoadingScreen ───────────────────────────────────
-// useAppNavigate reemplaza al useNavigate de react-router.
-// Muestra el LoadingScreen en el layout ANTES de cambiar de ruta,
-// evitando cualquier flash blanco entre pantallas.
 import { useAppNavigate } from "../providers/NavigationContext";
 
 const QUESTIONS = [
-  { text: "Me he sentido nervioso/a, ansioso/a o con los nervios de punta.",         icon: Wind },
-  { text: "No he podido dejar de preocuparme o controlar mis preocupaciones.",        icon: Brain },
-  { text: "Me ha costado concentrarme en mis actividades académicas.",                icon: BookOpen },
-  { text: "Me he sentido agotado/a o con poca energía durante el día.",               icon: BatteryLow },
-  { text: "He sentido tensión muscular, irritabilidad o dificultad para relajarme.",  icon: Zap },
-  { text: "He tenido poco interés o placer en hacer las cosas que antes disfrutaba.", icon: CloudRain },
-  { text: "He sentido que necesito un descanso mental urgente.",                      icon: Activity },
+  { id: "q1", text: "Me he sentido nervioso/a, ansioso/a o con los nervios de punta.",         icon: Wind,       dimension: "ansiedad" },
+  { id: "q2", text: "No he podido dejar de preocuparme o controlar mis preocupaciones.",        icon: Brain,      dimension: "ansiedad" },
+  { id: "q3", text: "Me ha costado concentrarme en mis actividades académicas.",                icon: BookOpen,   dimension: "estres"   },
+  { id: "q4", text: "Me he sentido agotado/a o con poca energía durante el día.",               icon: BatteryLow, dimension: "estres"   },
+  { id: "q5", text: "He sentido tensión muscular, irritabilidad o dificultad para relajarme.",  icon: Zap,        dimension: "estres"   },
+  { id: "q6", text: "He tenido poco interés o placer en hacer las cosas que antes disfrutaba.", icon: CloudRain,  dimension: "ansiedad" },
+  { id: "q7", text: "He sentido que necesito un descanso mental urgente.",                      icon: Activity,   dimension: "estres"   },
 ];
 
 const OPTIONS = [
   { value: 0, label: "Nunca",           sublabel: "No me ha ocurrido" },
-  { value: 1, label: "Varios días",     sublabel: "Algunas veces" },
-  { value: 2, label: "Más de la mitad", sublabel: "Con frecuencia" },
+  { value: 1, label: "Varios días",     sublabel: "Algunas veces"     },
+  { value: 2, label: "Más de la mitad", sublabel: "Con frecuencia"    },
   { value: 3, label: "Casi siempre",    sublabel: "La mayoría de días" },
 ];
 
@@ -39,12 +45,20 @@ const classify = (score) => {
   return                  { label: "Bienestar estable", Icon: Heart,         color: "#7ecfff", key: "neutro",   desc: "¡Vas muy bien! Sigue así." };
 };
 
-export default function Questionnaire() {
-  // rawNavigate solo para redirecciones de error (ej: usuario no logueado)
-  const rawNavigate = useNavigate();
+const calcDimensionScores = (answers) => {
+  let puntaje_ansiedad = 0;
+  let puntaje_estres   = 0;
+  QUESTIONS.forEach((q, i) => {
+    const val = answers[i] ?? 0;
+    if (q.dimension === "ansiedad") puntaje_ansiedad += val;
+    else                            puntaje_estres   += val;
+  });
+  return { puntaje_ansiedad, puntaje_estres };
+};
 
-  // navigate con LoadingScreen — usar para transiciones normales de flujo
-  const navigate = useAppNavigate();
+export default function Questionnaire() {
+  const rawNavigate = useNavigate();
+  const navigate    = useAppNavigate();
 
   const [step,    setStep]    = useState(0);
   const [answers, setAnswers] = useState(Array(QUESTIONS.length).fill(null));
@@ -81,47 +95,94 @@ export default function Questionnaire() {
       const user = auth.currentUser;
       if (!user) { rawNavigate("/"); return; }
 
+      const { puntaje_ansiedad, puntaje_estres } = calcDimensionScores(answers);
+
+      const respuestas = QUESTIONS.map((q, i) => ({
+        id:        q.id,
+        pregunta:  q.text,
+        dimension: q.dimension,
+        valor:     answers[i] ?? 0,
+        etiqueta:  OPTIONS[answers[i] ?? 0]?.label ?? "Nunca",
+      }));
+
+      let puntaje_anterior = null;
+      try {
+        const prevQ    = query(collection(db, "users", user.uid, "assessments"), orderBy("createdAt", "desc"), limit(1));
+        const prevSnap = await getDocs(prevQ);
+        if (!prevSnap.empty) puntaje_anterior = prevSnap.docs[0].data().score ?? null;
+      } catch (_) { /* sin historial previo */ }
+
+      const mejora = puntaje_anterior !== null ? puntaje_anterior - score : null;
+
       await setDoc(
         doc(db, "users", user.uid),
-        { email: user.email, lastEmotion: result.key, updatedAt: serverTimestamp() },
+        {
+          email:            user.email,
+          lastEmotion:      result.key,
+          nivel_progreso:   result.key,
+          updatedAt:        serverTimestamp(),
+        },
         { merge: true }
       );
+
+      await addDoc(
+        collection(db, "users", user.uid, "assessments"),
+        {
+          id_usuario:          user.uid,
+          email:               user.email,
+          createdAt:           serverTimestamp(),
+          respuestas:          respuestas,
+          score,
+          puntaje_estres,
+          puntaje_ansiedad,
+          classification:      result.key,
+          puntaje_emocional:   result.label,
+          puntaje_anterior,
+          mejora,
+        }
+      );
+
+      const statsRef = doc(db, "users", user.uid, "meta", "stats");
       await setDoc(
-        doc(db, "users", user.uid, "assessments", String(Date.now())),
-        { email: user.email, score, classification: result.key, createdAt: serverTimestamp() }
+        statsRef,
+        {
+          totalAssessments: increment(1),
+          lastScore:        score,
+          scoreImprovement: mejora !== null ? increment(Math.max(0, mejora)) : increment(0),
+          lastUpdated:      serverTimestamp(),
+        },
+        { merge: true }
       );
 
       await Swal.fire({
-        icon: "success",
-        title: result.label,
-        html: `Tu puntaje fue <b>${score} / 21</b>.<br/>${result.desc}`,
+        icon:              "success",
+        title:             result.label,
+        html:              `Tu puntaje fue <b>${score} / 21</b>.<br/>${result.desc}`,
         confirmButtonText: "Elegir avatar",
         confirmButtonColor: "#2c5364",
-        background: "#0f2027",
-        color: "#fff",
-        iconColor: result.color,
+        background:        "#0f2027",
+        color:             "#fff",
+        iconColor:         result.color,
       });
 
-      // ── Navega con LoadingScreen ─────────────────────────────────────────
-      // El LoadingScreen se muestra ENCIMA del layout actual (no desmonta nada),
-      // y navega solo cuando la barra llega al 100%. Sin flash blanco.
       navigate("/home/avatar", "Preparando tu avatar");
 
     } catch (e) {
       console.error(e);
       setSaving(false);
       Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "No se pudo guardar. Intenta de nuevo.",
+        icon:              "error",
+        title:             "Error",
+        text:              "No se pudo guardar. Intenta de nuevo.",
         confirmButtonColor: "#2c5364",
       });
     }
   };
 
-  // ── Pantalla de resultado ─────────────────────────────────────────────────
   if (done) {
     const { Icon: ResIcon, label, color, desc } = result;
+    const { puntaje_ansiedad, puntaje_estres }  = calcDimensionScores(answers);
+
     return (
       <div className="q-page">
         <div className="q-container q-result-screen">
@@ -148,6 +209,25 @@ export default function Questionnaire() {
             <div className="q-score-center">
               <span className="q-score-num" style={{ color }}>{score}</span>
               <span className="q-score-max">/ 21</span>
+            </div>
+          </div>
+
+          <div className="q-dimension-breakdown">
+            <div className="q-dim-item">
+              <AlertTriangle size={14} color="#fbbf24" />
+              <span className="q-dim-label">Estrés</span>
+              <div className="q-dim-bar-track">
+                <div className="q-dim-bar-fill" style={{ width: `${(puntaje_estres / 12) * 100}%`, background: "#fbbf24" }} />
+              </div>
+              <span className="q-dim-val" style={{ color: "#fbbf24" }}>{puntaje_estres}/12</span>
+            </div>
+            <div className="q-dim-item">
+              <AlertCircle size={14} color="#f87171" />
+              <span className="q-dim-label">Ansiedad</span>
+              <div className="q-dim-bar-track">
+                <div className="q-dim-bar-fill" style={{ width: `${(puntaje_ansiedad / 9) * 100}%`, background: "#f87171" }} />
+              </div>
+              <span className="q-dim-val" style={{ color: "#f87171" }}>{puntaje_ansiedad}/9</span>
             </div>
           </div>
 
@@ -181,7 +261,6 @@ export default function Questionnaire() {
     );
   }
 
-  // ── Pantalla de pregunta ──────────────────────────────────────────────────
   return (
     <div className="q-page">
       <div className="q-container">
