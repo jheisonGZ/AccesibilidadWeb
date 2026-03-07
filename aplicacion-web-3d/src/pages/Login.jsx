@@ -1,8 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../providers/AuthProvider";
 import Swal from "sweetalert2";
-import bgVideo from "../assets/video/login.mp4";
 import "../styles/login.css";
 
 export default function Login() {
@@ -13,28 +12,46 @@ export default function Login() {
   const [password, setPassword]   = useState("");
   const [busy, setBusy]           = useState(false);
   const [cinematic, setCinematic] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
 
   const videoRef = useRef(null);
 
+  // Carga el video solo después de que la página se montó
+  // usando src dinámico en lugar de import estático
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+
+    // Carga diferida — el video NO bloquea el render inicial
+    v.src = "/video/login.mp4"; // ← mueve el video a /public/video/login.mp4
+    v.load();
+
+    const onReady = () => setVideoReady(true);
+    v.addEventListener("canplaythrough", onReady);
+    return () => v.removeEventListener("canplaythrough", onReady);
+  }, []);
+
   const playCinematic = () => {
-    setCinematic(true);
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play();
-      videoRef.current.onended = () => navigate("/home");
+    const v = videoRef.current;
+    if (!v || !videoReady) {
+      // Si el video no cargó todavía, navega directo sin esperar
+      navigate("/home");
+      return;
     }
+    setCinematic(true);
+    v.currentTime = 0;
+    v.play().catch(() => navigate("/home")); // fallback si autoplay está bloqueado
+    v.onended = () => navigate("/home");
+    // Timeout de seguridad: si el video tarda más de 5s, navega igual
+    setTimeout(() => navigate("/home"), 5000);
   };
 
-  // ── LOGIN CORREO / CONTRASEÑA ──
   const handleLogin = async (e) => {
     e.preventDefault();
     setBusy(true);
-
     const msg = await login(email, password);
     setBusy(false);
-
     if (msg) {
-      // ❌ Error — verde oliva oscuro acorde al login
       Swal.fire({
         icon: "error",
         title: "Error al iniciar sesión",
@@ -50,14 +67,10 @@ export default function Login() {
     }
   };
 
-  // ── LOGIN CON GOOGLE ──
   const handleGoogle = async () => {
     setBusy(true);
-
     try {
       await loginWithGoogle();
-
-      // ✅ Bienvenida Google — verde oliva, cierra solo en 2s
       await Swal.fire({
         icon: "success",
         title: "¡Bienvenido!",
@@ -70,11 +83,8 @@ export default function Login() {
         timerProgressBar: true,
         showConfirmButton: false,
       });
-
       playCinematic();
-
     } catch {
-      // ❌ Error Google
       Swal.fire({
         icon: "error",
         title: "Error con Google",
@@ -92,17 +102,16 @@ export default function Login() {
 
   return (
     <div className="login-page">
-
+      {/* VIDEO — sin autoPlay, sin preload eager, carga diferida */}
       <video
         ref={videoRef}
         className={`login-bg-video ${cinematic ? "video-animate" : ""}`}
         muted
         playsInline
-      >
-        <source src={bgVideo} type="video/mp4" />
-      </video>
+        preload="none"
+      />
 
-      <div className={`login-bg-overlay ${cinematic ? "overlay-dark" : ""}`}></div>
+      <div className={`login-bg-overlay ${cinematic ? "overlay-dark" : ""}`} />
 
       <div className={`wrapper ${cinematic ? "wrapper-fade" : ""}`}>
         <form onSubmit={handleLogin}>
