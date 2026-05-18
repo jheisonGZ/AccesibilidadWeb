@@ -14,14 +14,26 @@ import { GLTFLoader } from "three-stdlib";
 import { OrbitControls } from "three-stdlib";
 import { DRACOLoader } from "three-stdlib";
 import "../styles/avatar.css";
+
 import { useAppNavigate, usePageReady } from "../providers/NavigationContext";
 import { useFeedback } from "../hooks/useFeedback";
 
 // =============================================================================
-// SONIDOS — Web Audio API con formas de onda suaves (sin síntesis robótica)
+// HÁPTICA — Vibration API (Android) + fallback silencioso en iOS
+// =============================================================================
+const vibrateSelect = () => {
+  try { navigator.vibrate?.(18); } catch (e) {}
+};
+
+const vibrateConfirm = () => {
+  try { navigator.vibrate?.([30, 60, 60]); } catch (e) {}
+};
+
+// =============================================================================
+// SONIDOS — Web Audio API con formas de onda suaves
 // =============================================================================
 
-// "Pop" suave al seleccionar una carta
+// "Pop" suave — disparado una sola vez desde el useEffect de isSelected
 const playSelectSound = () => {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -36,10 +48,11 @@ const playSelectSound = () => {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.13);
+    osc.onended = () => ctx.close();
   } catch (e) {}
 };
 
-// Acorde cálido Do-Mi-Sol al confirmar el avatar
+// Acorde cálido Do-Mi-Sol — disparado en didOpen del Swal
 const playConfirmSound = () => {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -57,6 +70,9 @@ const playConfirmSound = () => {
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
       osc.start(t);
       osc.stop(t + 0.5);
+      if (i === freqs.length - 1) {
+        osc.onended = () => ctx.close();
+      }
     });
   } catch (e) {}
 };
@@ -156,14 +172,15 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl }) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const greetingPlayedRef = useRef(false);
+  const soundPlayedRef    = useRef(false);
 
+  // ── Setup Three.js ────────────────────────────────────────────────────────
   useEffect(() => {
     const el = mountRef.current;
     if (!el) return;
 
     sceneRef.current = {};
 
-    // ── Renderer ──────────────────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(el.clientWidth, el.clientHeight);
@@ -172,40 +189,34 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl }) {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     el.appendChild(renderer.domElement);
 
-    // ── Scene + Camera ────────────────────────────────────────────────────────
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      38, el.clientWidth / el.clientHeight, 0.1, 100
-    );
+    const scene  = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(38, el.clientWidth / el.clientHeight, 0.1, 100);
     camera.position.set(0, 1.1, 2.8);
 
-    // ── Lights ────────────────────────────────────────────────────────────────
-    const ambient = new THREE.AmbientLight(0xffffff, 2.5);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const ambient    = new THREE.AmbientLight(0xffffff, 2.5);
+    const dirLight   = new THREE.DirectionalLight(0xffffff, 0.8);
     dirLight.position.set(2, 5, 3);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.set(512, 512);
     const frontLight = new THREE.DirectionalLight(0xffffff, 0.6);
     frontLight.position.set(0, 1, 4);
-    const fillLight = new THREE.HemisphereLight(0xffffff, 0x444466, 0.5);
-    const rimLight = new THREE.PointLight(new THREE.Color(accentColor), 0.6, 8);
+    const fillLight  = new THREE.HemisphereLight(0xffffff, 0x444466, 0.5);
+    const rimLight   = new THREE.PointLight(new THREE.Color(accentColor), 0.6, 8);
     rimLight.position.set(-1.5, 2, -2);
     scene.add(ambient, dirLight, frontLight, fillLight, rimLight);
 
-    // ── Controls ──────────────────────────────────────────────────────────────
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableZoom = false;
-    controls.enablePan = false;
+    controls.enableZoom   = false;
+    controls.enablePan    = false;
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.autoRotate = false;
+    controls.autoRotate   = false;
     controls.target.set(0, 0.9, 0);
     controls.update();
 
     sceneRef.current.renderer = renderer;
     sceneRef.current.controls = controls;
 
-    // ── Render loop ───────────────────────────────────────────────────────────
     const clock = new THREE.Clock();
     let rafId;
     const animate = () => {
@@ -217,7 +228,6 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl }) {
     };
     animate();
 
-    // ── Load model + idle en paralelo ─────────────────────────────────────────
     let cancelled = false;
     const modelLoader = new GLTFLoader();
     modelLoader.setDRACOLoader(sharedDracoLoader);
@@ -231,17 +241,17 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl }) {
       .then(([gltf, idleClip]) => {
         if (cancelled) return;
 
-        const model = gltf.scene;
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
+        const model  = gltf.scene;
+        const box    = new THREE.Box3().setFromObject(model);
+        const size   = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
-        const scale = 1.75 / Math.max(size.x, size.y, size.z);
+        const scale  = 1.75 / Math.max(size.x, size.y, size.z);
         model.scale.setScalar(scale);
         model.position.sub(center.multiplyScalar(scale));
         model.position.y += 0.05;
         model.traverse((child) => {
           if (child.isMesh) {
-            child.castShadow = true;
+            child.castShadow    = true;
             child.receiveShadow = true;
           }
         });
@@ -257,7 +267,7 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl }) {
           greetingAction.clampWhenFinished = true;
           greetingAction.play();
           greetingAction.paused = true;
-          greetingAction.time = 0;
+          greetingAction.time   = 0;
           sceneRef.current.greetingAction = greetingAction;
         }
 
@@ -302,6 +312,7 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl }) {
 
     if (!isSelected) {
       greetingPlayedRef.current = false;
+      soundPlayedRef.current    = false;
       const idle = sceneRef.current.idleAction;
       if (idle && idle.paused) {
         idle.reset();
@@ -309,6 +320,13 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl }) {
         idle.paused = false;
       }
       return;
+    }
+
+    // Sonido + vibración solo la primera vez que se selecciona
+    if (!soundPlayedRef.current) {
+      soundPlayedRef.current = true;
+      playSelectSound();
+      vibrateSelect();
     }
 
     if (greetingPlayedRef.current) return;
@@ -319,14 +337,11 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl }) {
     greetingPlayedRef.current = true;
 
     const idle = sceneRef.current.idleAction;
-    if (idle) {
-      idle.stop();
-      idle.reset();
-    }
+    if (idle) { idle.stop(); idle.reset(); }
 
     greetingAction.stop();
     greetingAction.reset();
-    greetingAction.time = 0;
+    greetingAction.time   = 0;
     greetingAction.paused = false;
     greetingAction.play();
 
@@ -381,52 +396,60 @@ function ChibiSVG({ color = "#7ecfff" }) {
 // AvatarSelect
 // =============================================================================
 export default function AvatarSelect() {
-  const rawNavigate = useNavigate();
-  const navigate = useAppNavigate();
-  const fb = useFeedback();
+  const rawNavigate = useNavigate();     // escape hatch si sesión expiró
+  const navigate    = useAppNavigate();  // navegación con overlay de loading
+  const fb          = useFeedback();
   usePageReady();
 
   const [selected, setSelected] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState("Todos");
+  const [loading,  setLoading]  = useState(false);
+  const [filter,   setFilter]   = useState("Todos");
 
   const filtered =
     filter === "Todos" ? AVATARS : AVATARS.filter((a) => a.gender === filter);
 
-  // Pop suave al seleccionar carta
+  // Sin sonido aquí — lo maneja el useEffect de AvatarCanvas con soundPlayedRef
   const handleSelect = (id) => {
     setSelected(id);
-    playSelectSound();
   };
 
   const handleContinue = async () => {
     if (!selected) return;
+
     setLoading(true);
-    // Acorde cálido justo antes del Swal de confirmación
-    playConfirmSound();
+    vibrateConfirm();
     fb.avatarConfirm();
+
     try {
       const user = auth.currentUser;
       if (!user) { rawNavigate("/"); return; }
+
+      // 1. Guardar en Firestore — await garantiza que FlowGuard lo encuentre
       await setDoc(doc(db, "users", user.uid), { avatar: selected }, { merge: true });
       localStorage.setItem("avatar", selected);
+
+      // 2. Guard: verificar que el avatar existe en el array local
       const av = AVATARS.find((a) => a.id === selected);
-      await Swal.fire({
+      if (!av) throw new Error("Avatar no encontrado: " + selected);
+
+      // 3. Toast sin await — no bloquea la navegación
+      Swal.fire({
         icon: "success",
         title: `${av.name} seleccionado`,
-        text: "Tu avatar esta listo. Entrando al escenario 3D...",
-        confirmButtonText: "Vamos",
-        confirmButtonColor: "#2c5364",
+        timer: 1500,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        didOpen: () => playConfirmSound(),
         background: "#0f2027",
         color: "#fff",
         iconColor: av.color,
-        timer: 2500,
-        timerProgressBar: true,
       });
+
+      // 4. Navegar inmediatamente — AvatarSelect se desmonta en el mismo tick
       navigate("/home/scene", "Cargando escenario 3D");
+
     } catch (e) {
       console.error(e);
-      setLoading(false);
       fb.error();
       Swal.fire({
         icon: "error",
@@ -434,6 +457,8 @@ export default function AvatarSelect() {
         text: "No se pudo guardar el avatar.",
         confirmButtonColor: "#2c5364",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -452,7 +477,11 @@ export default function AvatarSelect() {
             <button
               key={f}
               className={`av-filter-btn ${filter === f ? "active" : ""}`}
-              onClick={() => { setFilter(f); fb.cardClick(); }}
+              onClick={() => {
+                setFilter(f);
+                setSelected(null);
+                fb.cardClick();
+              }}
             >
               {f}
             </button>
@@ -477,7 +506,6 @@ export default function AvatarSelect() {
                 staticModelUrl={av.staticAnim}
                 accentColor={av.color}
                 isSelected={selected === av.id}
-                avatarName={av.name}
               />
               <div className="av-info">
                 <span className="av-gender-tag">{av.gender}</span>
