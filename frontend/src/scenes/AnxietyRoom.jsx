@@ -1,7 +1,5 @@
-export default function AnxietyRoom() {
-  return (
-    <div style={{ color: "white" }}>
-      Escena de Ansiedad
-    </div>
-  );
+import StressRoom from "./StressRoom";
+
+export default function AnxietyRoom(props) {
+  return <StressRoom {...props} />;
 }

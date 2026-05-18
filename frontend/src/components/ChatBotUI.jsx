@@ -78,7 +78,7 @@ const SYSTEM_PROMPTS = {
     "Alejandro: estudiante activo y curioso, ideal si te identificas con energia y exploracion. " +
     "Valentina: creativa, empatica y decidida, ideal si valoras la expresion y la conexion. " +
     "Sebastian: apasionado por la tecnologia, ideal si te sientes tech y analitico. " +
-    "Mariana: reflexiva y lista para aprender, ideal si valoras la calma y la introspection. " +
+    "Katerin: reflexiva y lista para aprender, ideal si valoras la calma y la introspection. " +
     "Anima al usuario a elegir el que mas le represente y recuerda que puede cambiarlo despues.",
 
   progreso:

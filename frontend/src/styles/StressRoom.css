@@ -1,0 +1,163 @@
+/* ── Raíz de la sala ── */
+.stress-room-root {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  background: #0a1628;
+}
+
+/* ── Challenge overlay ── */
+.stress-challenge-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+}
+
+.stress-challenge-panel {
+  background: #0d1f35;
+  border: 1px solid var(--item-color, #00eaff);
+  border-radius: 18px;
+  padding: 28px 32px;
+  width: min(480px, 92vw);
+  box-shadow: 0 0 32px var(--item-glow, #00eaff33);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: #e2e8f0;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.sc-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sc-emoji { font-size: 2rem; line-height: 1; }
+
+.sc-title-block { flex: 1; }
+
+.sc-title {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--item-color, #00eaff);
+}
+
+.sc-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.sc-close {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+.sc-close:hover { color: #e2e8f0; }
+
+/* ── Barra de progreso ── */
+.sc-progress-bar-track {
+  height: 6px;
+  background: #1e3a5f;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.sc-progress-bar-fill {
+  height: 100%;
+  background: var(--item-color, #00eaff);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 8px var(--item-glow, #00eaff88);
+}
+.sc-progress-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-align: right;
+}
+
+/* ── Step box ── */
+.sc-step-box {
+  background: #0a1628;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid #1e3a5f;
+}
+.sc-step-text {
+  flex: 1;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+/* ── Timer SVG ── */
+.sc-timer-wrapper {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+}
+.sc-timer-svg { width: 60px; height: 60px; transform: rotate(-90deg); }
+.sc-timer-track { fill: none; stroke: #1e3a5f; stroke-width: 4; }
+.sc-timer-arc   { fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.9s linear; }
+.sc-timer-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+/* ── Botones ── */
+.sc-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.sc-btn-active {
+  background: var(--item-color, #00eaff);
+  color: #0a1628;
+}
+.sc-btn-active:hover { opacity: 0.88; transform: translateY(-1px); }
+.sc-btn-disabled {
+  background: #1e3a5f;
+  color: #475569;
+  cursor: not-allowed;
+}
+
+/* ── Pantalla de completado ── */
+.sc-complete {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.sc-complete-icon { font-size: 3rem; }
+.sc-complete h4   { margin: 0; font-size: 1.2rem; color: var(--item-color, #00eaff); }
+.sc-complete p    { margin: 0; color: #94a3b8; font-size: 0.9rem; }
+.sc-btn-collect   { margin-top: 6px; }

@@ -125,6 +125,7 @@ export default function Scene() {
 
   
   if (loading) return <div style={{ background: "#080e08", height: "100vh" }} />;
+  
 
   const SceneComponent =
     emotion === "ansiedad" ? AnxietyRoom :

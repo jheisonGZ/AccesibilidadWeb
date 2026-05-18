@@ -3,6 +3,7 @@
    ════════════════════════════════ */
 .av-page {
   min-height: 100vh;
+  min-height: 100dvh; /* dynamic viewport — evita el salto del browser bar en móvil */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,6 +12,8 @@
   overflow: hidden;
   font-family: 'Segoe UI', sans-serif;
   color: white;
+  /* Evita el bounce scroll en iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 .av-page::before {
@@ -86,6 +89,11 @@
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'Segoe UI', sans-serif;
+  /* Área mínima de toque recomendada por Apple/Google: 44px */
+  min-height: 44px;
+  /* Evita el highlight azul en Android al tocar */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .av-filter-btn:hover {
@@ -124,6 +132,12 @@
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   display: flex;
   flex-direction: column;
+  /* Sin highlight azul en Android */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  /* Evita selección de texto accidental al hacer tap rápido */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .av-card:hover {
@@ -132,12 +146,33 @@
   box-shadow: 0 16px 40px rgba(0,0,0,0.3);
 }
 
+/* En móvil el hover no aplica — el active reemplaza el feedback visual */
+@media (hover: none) {
+  .av-card:hover {
+    transform: none;
+    border-color: rgba(255,255,255,0.1);
+    box-shadow: none;
+  }
+
+  .av-card:active {
+    transform: scale(0.97);
+    border-color: rgba(255,255,255,0.25);
+    transition: transform 0.1s ease;
+  }
+}
+
 .av-card.selected {
   border-color: var(--av-accent, #7ecfff);
   box-shadow:
     0 0 0 3px color-mix(in srgb, var(--av-accent, #7ecfff) 20%, transparent),
     0 16px 40px rgba(0,0,0,0.35);
   transform: translateY(-6px);
+}
+
+@media (hover: none) {
+  .av-card.selected {
+    transform: none;
+  }
 }
 
 /* check de selección */
@@ -171,9 +206,10 @@
   height: 200px;
   background: rgba(0,0,0,0.2);
   overflow: hidden;
+  /* Evita que OrbitControls interfiera con el scroll de la página */
+  touch-action: none;
 }
 
-/* el canvas de Three.js */
 .av-canvas {
   width: 100%;
   height: 100%;
@@ -263,6 +299,12 @@
   font-family: 'Segoe UI', sans-serif;
   min-width: 280px;
   justify-content: center;
+  /* Área mínima de toque */
+  min-height: 52px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* estado: sin selección */
@@ -287,6 +329,11 @@
   transform: translateY(-2px);
 }
 
+.av-btn:not(:disabled):active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
+
 /* estado: guardando */
 .av-btn:disabled[data-loading] {
   background: rgba(126,207,255,0.1);
@@ -296,14 +343,155 @@
 }
 
 /* ════════════════════════════════
-   RESPONSIVE
+   RESPONSIVE — TABLET (≤ 768px)
    ════════════════════════════════ */
 @media (max-width: 768px) {
-  .av-grid { grid-template-columns: repeat(2, 1fr); }
+  .av-page {
+    padding: 64px 16px 40px;
+    align-items: flex-start;
+  }
+
+  .av-container {
+    gap: 20px;
+  }
+
+  .av-title {
+    font-size: 1.6rem;
+  }
+
+  .av-subtitle {
+    font-size: 0.88rem;
+  }
+
+  .av-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .av-canvas-wrap {
+    height: 180px;
+  }
+
+  .av-btn {
+    width: 100%;
+    min-width: unset;
+  }
 }
 
+/* ════════════════════════════════
+   RESPONSIVE — MÓVIL (≤ 480px)
+   ════════════════════════════════ */
 @media (max-width: 480px) {
-  .av-grid         { grid-template-columns: 1fr 1fr; gap: 12px; }
-  .av-canvas-wrap  { height: 160px; }
-  .av-title        { font-size: 1.5rem; }
+  .av-page {
+    padding: 56px 12px 32px;
+  }
+
+  .av-container {
+    gap: 16px;
+  }
+
+  .av-header {
+    padding: 0 4px;
+  }
+
+  .av-title {
+    font-size: 1.4rem;
+    margin-bottom: 6px;
+  }
+
+  .av-subtitle {
+    font-size: 0.82rem;
+  }
+
+  .av-filters {
+    gap: 8px;
+  }
+
+  .av-filter-btn {
+    padding: 6px 16px;
+    font-size: 0.78rem;
+  }
+
+  .av-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .av-canvas-wrap {
+    height: 155px;
+  }
+
+  .av-info {
+    padding: 10px 12px 12px;
+    gap: 3px;
+  }
+
+  .av-name {
+    font-size: 0.9rem;
+  }
+
+  .av-desc {
+    font-size: 0.7rem;
+  }
+
+  .av-btn {
+    font-size: 0.92rem;
+    padding: 13px 20px;
+    border-radius: 12px;
+    min-height: 50px;
+  }
+}
+
+/* ════════════════════════════════
+   RESPONSIVE — MÓVIL MUY PEQUEÑO (≤ 360px)
+   Ej: Galaxy A series, Moto G
+   ════════════════════════════════ */
+@media (max-width: 360px) {
+  .av-title {
+    font-size: 1.25rem;
+  }
+
+  .av-canvas-wrap {
+    height: 135px;
+  }
+
+  .av-filter-btn {
+    padding: 5px 12px;
+    font-size: 0.74rem;
+  }
+
+  .av-grid {
+    gap: 8px;
+  }
+
+  .av-info {
+    padding: 8px 10px 10px;
+  }
+
+  .av-name {
+    font-size: 0.85rem;
+  }
+}
+
+/* ════════════════════════════════
+   ORIENTACIÓN HORIZONTAL EN MÓVIL
+   Evita que el grid se rompa en landscape
+   ════════════════════════════════ */
+@media (max-width: 768px) and (orientation: landscape) {
+  .av-page {
+    padding: 48px 20px 24px;
+  }
+
+  .av-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .av-canvas-wrap {
+    height: 130px;
+  }
+
+  .av-container {
+    gap: 14px;
+  }
 }
