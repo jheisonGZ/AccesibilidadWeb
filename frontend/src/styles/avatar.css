@@ -188,7 +188,7 @@
   align-items: center;
   justify-content: center;
   color: #0d1b2a;
-  z-index: 10;
+  z-index: 10; /* encima del overlay */
   animation: popIn 0.2s cubic-bezier(.34,1.56,.64,1) both;
 }
 
@@ -206,8 +206,13 @@
   height: 200px;
   background: rgba(0,0,0,0.2);
   overflow: hidden;
-  /* Evita que OrbitControls interfiera con el scroll de la página */
-  touch-action: none;
+  /*
+   * ANTES: touch-action: none — bloqueaba taps en móvil con 4 avatares
+   *        porque el canvas cubría toda la tarjeta y absorbía los eventos.
+   * AHORA: touch-action: auto — el canvas hijo maneja su propio touch-action,
+   *        y el overlay transparente captura los taps con manipulation.
+   */
+  touch-action: auto;
 }
 
 .av-canvas {
@@ -219,6 +224,30 @@
   width: 100% !important;
   height: 100% !important;
   display: block;
+  /*
+   * touch-action: none aplicado directamente al canvas de Three.js.
+   * OrbitControls necesita esto para funcionar correctamente,
+   * pero ahora solo afecta al canvas y no al wrap completo.
+   */
+  touch-action: none;
+}
+
+/*
+ * Overlay transparente encima del canvas de Three.js.
+ * Captura taps en móvil y los redirige al handler del avatar via onTap prop.
+ * z-index: 5 — encima del canvas (z auto) pero debajo del .av-check (z 10).
+ * touch-action: manipulation — permite tap y doble tap, bloquea pan/zoom
+ * del browser pero NO interfiere con el scroll de la página.
+ */
+.av-canvas-tap-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  /* Sin background — completamente transparente */
+  background: transparent;
+  cursor: pointer;
 }
 
 /* placeholder mientras carga el GLB */
@@ -233,6 +262,8 @@
   background: rgba(0,0,0,0.25);
   border-bottom: 2px solid;
   border-color: inherit;
+  /* El placeholder también queda encima del overlay durante la carga */
+  z-index: 6;
 }
 
 /* punto animado de carga */

@@ -166,7 +166,7 @@ function loadIdleClip(url) {
 // =============================================================================
 // AvatarCanvas
 // =============================================================================
-function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl }) {
+function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl, onTap }) {
   const mountRef = useRef(null);
   const sceneRef = useRef({});
   const [loaded, setLoaded] = useState(false);
@@ -206,11 +206,12 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl }) {
     scene.add(ambient, dirLight, frontLight, fillLight, rimLight);
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableZoom   = false;
-    controls.enablePan    = false;
+    controls.enableZoom    = false;
+    controls.enablePan     = false;
+    controls.enableRotate  = false; // ← FIJA el personaje, no se puede rotar con drag
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.autoRotate   = false;
+    controls.autoRotate    = false;
     controls.target.set(0, 0.9, 0);
     controls.update();
 
@@ -357,6 +358,18 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl }) {
   return (
     <div className="av-canvas-wrap">
       <div ref={mountRef} className="av-canvas" />
+
+      {/* ── Overlay transparente para capturar taps en móvil ── */}
+      {/* Queda encima del canvas de Three.js pero debajo del check badge */}
+      {/* Redirige el tap al handler del padre .av-card via onTap prop    */}
+      <div
+        className="av-canvas-tap-overlay"
+        onClick={(e) => {
+          e.stopPropagation(); // evita doble disparo con el onClick del padre
+          onTap?.();
+        }}
+      />
+
       {(!loaded || error) && (
         <div className="av-canvas-placeholder" style={{ borderColor: accentColor }}>
           <ChibiSVG color={accentColor} />
@@ -408,7 +421,6 @@ export default function AvatarSelect() {
   const filtered =
     filter === "Todos" ? AVATARS : AVATARS.filter((a) => a.gender === filter);
 
-  // Sin sonido aquí — lo maneja el useEffect de AvatarCanvas con soundPlayedRef
   const handleSelect = (id) => {
     setSelected(id);
   };
@@ -506,6 +518,7 @@ export default function AvatarSelect() {
                 staticModelUrl={av.staticAnim}
                 accentColor={av.color}
                 isSelected={selected === av.id}
+                onTap={() => handleSelect(av.id)} // ← tap desde el overlay del canvas
               />
               <div className="av-info">
                 <span className="av-gender-tag">{av.gender}</span>
