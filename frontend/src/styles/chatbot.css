@@ -3,7 +3,7 @@
 /* ── Wrapper principal ── */
 .chatbot-wrapper {
   position: fixed;
-  bottom: -70px;
+  bottom: 0;               /* FIX: antes -70px/-50px, lo cortaba en móvil con browser bar dinámico */
   right: 16px;
   z-index: 1000;
   display: flex;
@@ -12,9 +12,37 @@
   justify-content: flex-end;
   gap: 8px;
   pointer-events: all;
-  max-height: calc(100vh - 32px);
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+
+  /*
+   * FIX CRÍTICO: se eliminó `transform: translateZ(0)` y `will-change`.
+   *
+   * Cualquier transform en un ancestro de position:fixed rompe el fixed en
+   * todos los browsers: el elemento deja de ser relativo al viewport y pasa
+   * a ser relativo al contenedor transformado. Esto causaba:
+   *   - El canvas de R3F quedaba en coordenadas incorrectas al hacer scroll.
+   *   - El chatbot "desaparecía" porque el canvas se renderizaba fuera del área.
+   *
+   * position:fixed ya está fuera del flujo normal; no necesita aceleración
+   * GPU extra. Eliminar el transform soluciona ambos bugs de una vez.
+   */
+
+  /*
+   * FIX ALTO MÁXIMO con dvh (dynamic viewport height).
+   *
+   * 100vh en móvil incluye la barra del navegador (Safari, Chrome Android).
+   * Cuando la barra se oculta al hacer scroll, el viewport real es más alto
+   * que 100vh, causando overflow. dvh es el viewport dinámico que ya excluye
+   * la barra del navegador y se recalcula cuando aparece/desaparece.
+   * El fallback a 100vh cubre navegadores sin soporte (< iOS 15.4, < Chrome 108).
+   */
+  max-height: calc(100vh - 32px);              /* fallback */
+  max-height: calc(100dvh - 32px);             /* dvh para móvil */
+
+  /*
+   * FIX iOS SAFE AREA: el bottom: 0 queda justo sobre el home indicator
+   * en iPhone X+. padding-bottom con safe-area-inset-bottom lo separa.
+   */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* ── Canvas 3D ── */
@@ -28,6 +56,30 @@
   position: relative;
   -webkit-tap-highlight-color: transparent;
   outline: none;
+
+  /*
+   * FIX CANVAS EN BLANCO EN MÓVIL:
+   * El canvas de R3F (WebGL) puede quedar negro/blanco cuando:
+   *   1. La página vuelve de background (iOS suspende WebGL contexts).
+   *   2. El contenedor tiene overflow:hidden con transform (ya corregido arriba).
+   *   3. El canvas tiene opacity:0 heredado de algún padre.
+   *
+   * Estas propiedades garantizan visibilidad correcta:
+   */
+  opacity: 1 !important;
+  visibility: visible !important;
+  /* Sin overflow:hidden para no cortar el canvas WebGL */
+  overflow: visible;
+}
+
+/*
+ * FIX CANVAS WEBGL: el canvas interno de R3F debe tener display:block
+ * y NO tener ningún transform heredado que rompa sus coordenadas.
+ */
+.chatbot-canvas canvas {
+  display: block !important;
+  /* touch-action:none solo en el canvas, no en el wrapper */
+  touch-action: none;
 }
 
 /* ── Tooltip (nube apuntando al perrito) ── */
@@ -94,14 +146,20 @@
   overflow: hidden;
   pointer-events: all;
   isolation: isolate;
-  will-change: transform, opacity;
-  transform: translateZ(0);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.04) inset;
   opacity: 0;
   transform-origin: bottom right;
   flex-shrink: 1;
+
+  /*
+   * FIX: se eliminó will-change:transform y transform:translateZ(0) del panel.
+   * Estos triggers de composición en un hijo de position:fixed causan que el
+   * panel quede fuera de posición en ciertos navegadores móviles al hacer
+   * scroll o al aparecer el teclado virtual. El panel ya tiene GPU compositing
+   * por sus animaciones GSAP (opacity/transform); no necesita will-change extra.
+   */
 }
 
 /* ── Header ── */
@@ -152,6 +210,11 @@
   align-items: center;
   justify-content: center;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
+  /* Área mínima de toque para móvil */
+  min-width: 44px;
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .chatbot-close:hover {
   background: rgba(126, 207, 255, 0.15);
@@ -169,6 +232,10 @@
   gap: 10px;
   scrollbar-width: thin;
   scrollbar-color: rgba(126, 207, 255, 0.15) transparent;
+  /* FIX iOS: momentum scrolling dentro del panel */
+  -webkit-overflow-scrolling: touch;
+  /* FIX: overscroll-behavior evita que el scroll del panel propague al body */
+  overscroll-behavior: contain;
 }
 .chatbot-messages::-webkit-scrollbar { width: 3px; }
 .chatbot-messages::-webkit-scrollbar-thumb {
@@ -238,6 +305,13 @@
   gap: 8px;
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.03);
+  /*
+   * FIX TECLADO VIRTUAL iOS/Android:
+   * Al hacer focus en el input el teclado virtual sube y comprime el viewport.
+   * padding-bottom con safe-area-inset-bottom asegura que el input-row no quede
+   * pegado al borde inferior ni tapado por el teclado en dispositivos con notch.
+   */
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
 }
 .chatbot-input {
   flex: 1;
@@ -252,6 +326,11 @@
   outline: none;
   font-family: inherit;
   transition: border-color 0.2s, background 0.2s;
+  /*
+   * FIX iOS: font-size mínimo de 16px para evitar el zoom automático al hacer
+   * focus en inputs en Safari (iOS hace zoom si font-size < 16px).
+   * Se sobreescribe solo en móvil abajo.
+   */
 }
 .chatbot-input:focus {
   border-color: rgba(126, 207, 255, 0.4);
@@ -274,6 +353,11 @@
   flex-shrink: 0;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  /* Área mínima de toque */
+  min-width: 44px;
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .chatbot-send:hover:not(:disabled) {
   transform: scale(1.08);
@@ -287,34 +371,77 @@
 ============================================================================= */
 @media (max-width: 480px) {
   .chatbot-wrapper {
-    bottom: -50px;
+    /*
+     * FIX: bottom:0 + padding-bottom safe-area (ya heredado del base).
+     * Antes bottom:-50px cortaba el perro. Con bottom:0 queda justo al borde
+     * y el safe-area-inset-bottom lo separa del home indicator en iPhone X+.
+     */
+    bottom: 0;
     right: 8px;
     left: 8px;
     align-items: flex-end;
-    max-height: calc(100vh - 16px);
+    max-height: calc(100vh - 16px);    /* fallback */
+    max-height: calc(100dvh - 16px);   /* dvh dinámico */
   }
+
   .chatbot-canvas {
     width: 110px;
     height: 110px;
     align-self: flex-end;
   }
+
   .chatbot-tooltip {
     display: none;
   }
+
   .chatbot-panel {
     width: 100%;
-    height: min(420px, 60vh);
+    /*
+     * FIX PANEL APLASTADO CON TECLADO VIRTUAL:
+     * min() con dvh garantiza que el panel no supere el viewport dinámico.
+     * Antes usaba 60vh que no se recalcula cuando sube el teclado.
+     * Ahora usa svh (smallest viewport height = viewport con teclado visible)
+     * como tercer valor para el caso extremo.
+     *
+     * Fallback progresivo:
+     *   1. min(420px, 60vh)        — browsers sin dvh/svh
+     *   2. min(420px, 60dvh)       — dvh: se recalcula con browser bar
+     *   3. clamp(280px, 55svh, 420px) — svh: garantiza que cabe con teclado
+     */
+    height: min(420px, 60vh);          /* fallback */
+    height: min(420px, 60dvh);         /* dvh */
+    /* En la práctica el clamp con svh es el más seguro en teclado abierto: */
+    height: clamp(280px, 55svh, 420px);
     border-radius: 16px;
   }
+
   .chatbot-header        { padding: 12px 14px; }
   .chatbot-title         { font-size: 13px; }
   .chatbot-subtitle      { font-size: 9.5px; }
   .chatbot-close         { width: 24px; height: 24px; font-size: 11px; }
   .chatbot-messages      { padding: 12px 14px; gap: 8px; }
   .chatbot-bubble        { font-size: 12px; padding: 8px 11px; max-width: 88%; }
-  .chatbot-input-row     { padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
-  .chatbot-input         { font-size: 13px; padding: 8px 11px; }
-  .chatbot-send          { width: 34px; height: 34px; font-size: 13px; }
+
+  .chatbot-input-row {
+    padding: 10px 12px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+  }
+
+  .chatbot-input {
+    /*
+     * FIX ZOOM iOS: font-size >= 16px previene el zoom automático de Safari
+     * al hacer focus en el input. Esto es un bug conocido de iOS que afecta
+     * inputs con font-size < 16px.
+     */
+    font-size: 16px;
+    padding: 8px 11px;
+  }
+
+  .chatbot-send {
+    width: 34px;
+    height: 34px;
+    font-size: 13px;
+  }
 }
 
 /* =============================================================================
@@ -323,4 +450,25 @@
 @media (min-width: 641px) and (max-width: 1024px) {
   .chatbot-panel  { width: 300px; height: 440px; }
   .chatbot-canvas { width: 150px; height: 150px; }
+}
+
+/* =============================================================================
+   ORIENTACIÓN LANDSCAPE EN MÓVIL
+   El panel no puede ser muy alto si el viewport tiene poca altura vertical.
+============================================================================= */
+@media (max-width: 768px) and (orientation: landscape) {
+  .chatbot-panel {
+    height: min(320px, 80dvh);
+  }
+
+  .chatbot-canvas {
+    width: 90px;
+    height: 90px;
+  }
+
+  .chatbot-wrapper {
+    bottom: 0;
+    right: 12px;
+    gap: 4px;
+  }
 }

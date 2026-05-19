@@ -1,0 +1,101 @@
+Listado de rutas de carpetas para el volumen Programas
+El número de serie del volumen es 5A58-F8EB
+D:.
+¦   estructura.txt
+¦   login.webp
+¦   
++---images
+¦       avatar.webp
+¦       clasi.webp
+¦       crear.webp
+¦       dashboard.webp
+¦       HelpControls.webp
+¦       loading.webp
+¦       progreso.webp
+¦       recuperar.webp
+¦       
++---models
+¦   ¦   hombre.glb
+¦   ¦   hombre2.glb
+¦   ¦   mujer.glb
+¦   ¦   mujer2.glb
+¦   ¦   taison.glb
+¦   ¦   
+¦   +---animations
+¦   ¦       caminar.glb
+¦   ¦       correr.glb
+¦   ¦       estatica.glb
+¦   ¦       estatico.glb
+¦   ¦       hombre1.glb
+¦   ¦       saltar.glb
+¦   ¦       
+¦   +---Arboles
+¦   ¦       small-tree-1.glb
+¦   ¦       small-tree-2.glb
+¦   ¦       small-tree-3.glb
+¦   ¦       tree-1.glb
+¦   ¦       tree-2.glb
+¦   ¦       tree-3.glb
+¦   ¦       
+¦   +---Arbustos
+¦   ¦       bush-1.glb
+¦   ¦       bush-2.glb
+¦   ¦       bush-3.glb
+¦   ¦       bush-4.glb
+¦   ¦       bush-5.glb
+¦   ¦       bush-6.glb
+¦   ¦       
+¦   +---Flores
+¦   ¦       flower-1.glb
+¦   ¦       flower-2.glb
+¦   ¦       flower-3.glb
+¦   ¦       flower-4.glb
+¦   ¦       flower-5.glb
+¦   ¦       flower-6.glb
+¦   ¦       flower-7.glb
+¦   ¦       flower-8.glb
+¦   ¦       flower_9.glb
+¦   ¦       
+¦   +---Hongos
+¦   ¦       mushroom-1.glb
+¦   ¦       mushroom-2.glb
+¦   ¦       mushroom-3.glb
+¦   ¦       mushroom-5.glb
+¦   ¦       
+¦   +---Otros
+¦   ¦       sky.glb
+¦   ¦       water.glb
+¦   ¦       wooden-log-1.glb
+¦   ¦       wooden-log-2.glb
+¦   ¦       
+¦   +---Pasto
+¦   ¦       grass-1.glb
+¦   ¦       grass-2.glb
+¦   ¦       grass-3.glb
+¦   ¦       grass-4.glb
+¦   ¦       grass-5.glb
+¦   ¦       grass-6.glb
+¦   ¦       grass-7.glb
+¦   ¦       grass-8.glb
+¦   ¦       
+¦   +---Piedras
+¦   ¦       stone-1.glb
+¦   ¦       stone-2.glb
+¦   ¦       stone-3.glb
+¦   ¦       stone-4.glb
+¦   ¦       stone-5.glb
+¦   ¦       stone-6.glb
+¦   ¦       stone-7.glb
+¦   ¦       stone-8.glb
+¦   ¦       
+¦   +---Pinos
+¦           pine-tree-1.glb
+¦           pine-tree-2.glb
+¦           pine-tree-3.glb
+¦           pine-tree-4.glb
+¦           pine-tree-snow.glb
+¦           
++---video
+        icon.png
+        login.mp4
+        

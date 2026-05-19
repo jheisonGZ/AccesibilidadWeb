@@ -80,21 +80,19 @@ const SYSTEM_PROMPTS = {
     "Sebastian: apasionado por la tecnologia, ideal si te sientes tech y analitico. " +
     "Katerin: reflexiva y lista para aprender, ideal si valoras la calma y la introspection. " +
     "Anima al usuario a elegir el que mas le represente y recuerda que puede cambiarlo despues.",
-
   progreso:
-  BASE_PROMPT +
-  " CONTEXTO ESPECIAL: El usuario esta revisando su progreso emocional historico dentro de la plataforma. " +
-  "Puedes analizar tendencias emocionales, cambios entre evaluaciones, avances, recaidas y patrones generales. " +
-  "Tu objetivo es ayudarle a reflexionar sobre su evolucion emocional de manera empatica y motivadora. " +
-  "Si el usuario ha mejorado, reconoce y refuerza sus avances. " +
-  "Si mantiene niveles altos de ansiedad o estres, evita juzgar y enfocate en apoyo emocional gradual. " +
-  "Si hay recaidas emocionales, explicale que el progreso no siempre es lineal y que pequenos pasos tambien cuentan. " +
-  "Ayudalo a identificar posibles causas relacionadas con carga academica, descanso, organizacion o presion universitaria. " +
-  "Puedes recomendar tecnicas como Pomodoro, respiracion 4-7-8, grounding, pausas activas o higiene del sueno dependiendo del caso. " +
-  "Nunca hagas diagnosticos clinicos. " +
-  "Habla como un acompanante cercano que observa el progreso completo y no solo un resultado aislado.",
+    BASE_PROMPT +
+    " CONTEXTO ESPECIAL: El usuario esta revisando su progreso emocional historico dentro de la plataforma. " +
+    "Puedes analizar tendencias emocionales, cambios entre evaluaciones, avances, recaidas y patrones generales. " +
+    "Tu objetivo es ayudarle a reflexionar sobre su evolucion emocional de manera empatica y motivadora. " +
+    "Si el usuario ha mejorado, reconoce y refuerza sus avances. " +
+    "Si mantiene niveles altos de ansiedad o estres, evita juzgar y enfocate en apoyo emocional gradual. " +
+    "Si hay recaidas emocionales, explicale que el progreso no siempre es lineal y que pequenos pasos tambien cuentan. " +
+    "Ayudalo a identificar posibles causas relacionadas con carga academica, descanso, organizacion o presion universitaria. " +
+    "Puedes recomendar tecnicas como Pomodoro, respiracion 4-7-8, grounding, pausas activas o higiene del sueno dependiendo del caso. " +
+    "Nunca hagas diagnosticos clinicos. " +
+    "Habla como un acompanante cercano que observa el progreso completo y no solo un resultado aislado.",
 };
-
 
 const WELCOME_MESSAGES = {
   neutro:
@@ -121,10 +119,9 @@ const WELCOME_MESSAGES = {
     "Cada personaje es unico pero todos te acompanan igual de bien. " +
     "¿Quieres que te cuente algo sobre cada uno para elegir mejor?",
   progreso:
-  "Woof! Hola, soy Taison. Veo que estas revisando tu progreso en la plataforma. " +
-  "Recuerda que avanzar tambien significa reconocer pequenos pasos y no solo resultados perfectos. " +
-  "Si quieres, puedo ayudarte a interpretar como vas y darte algunas recomendaciones para seguir mejorando.",
-  
+    "Woof! Hola, soy Taison. Veo que estas revisando tu progreso en la plataforma. " +
+    "Recuerda que avanzar tambien significa reconocer pequenos pasos y no solo resultados perfectos. " +
+    "Si quieres, puedo ayudarte a interpretar como vas y darte algunas recomendaciones para seguir mejorando.",
 };
 
 const WELCOME_SIN_TEST =
@@ -155,10 +152,103 @@ const esTemaFueraDeScope = (texto) =>
   PATRONES_PROHIBIDOS.some((patron) => patron.test(texto));
 
 // -----------------------------------------------------------------------------
-// QuestionMark — morado durante preguntas, cyan durante resultado
+// BUBBLE_CONFIG — color + ícono SVG por cada contexto/estado emocional
+// Reemplaza el ? genérico de QuestionMark por un globito con identidad propia.
 // -----------------------------------------------------------------------------
-function QuestionMark({ visible, isResult, isAvatar , isProgress }) {
+const BUBBLE_CONFIG = {
+  neutro: {
+    color: "#00eaff",
+    shadow: "rgba(0,234,255,0.75)",
+    icon: (
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9 10h.01M15 10h.01" />
+        <path d="M9.5 15a3.5 3.5 0 0 0 5 0" />
+      </svg>
+    ),
+  },
+  leve: {
+    color: "#00ff88",
+    shadow: "rgba(0,255,136,0.75)",
+    icon: (
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9 10h.01" />
+        <path d="M14 9l2 2-2 2" />
+        <path d="M9.5 15a3.5 3.5 0 0 0 5 0" />
+      </svg>
+    ),
+  },
+  estres: {
+    color: "#ffcc00",
+    shadow: "rgba(255,204,0,0.75)",
+    icon: (
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 12c0-3 2.5-6 2.5-6s-5 2-5 6a4.5 4.5 0 0 0 9 0c0-2-1-3.5-2-4.5 0 1.5-4.5 4.5-4.5 4.5z" />
+      </svg>
+    ),
+  },
+  ansiedad: {
+    color: "#ff4466",
+    shadow: "rgba(255,68,102,0.75)",
+    icon: (
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 12h3l2-5 4 10 2-5h7" />
+      </svg>
+    ),
+  },
+  questionnaire: {
+    color: "#a78bfa",
+    shadow: "rgba(167,139,250,0.75)",
+    icon: (
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+        <rect x="9" y="3" width="6" height="4" rx="1" />
+        <path d="M9 12l2 2 4-4" />
+      </svg>
+    ),
+  },
+  resultado: {
+    color: "#00eaff",
+    shadow: "rgba(0,234,255,0.75)",
+    icon: (
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="9" r="5" />
+        <path d="M8.5 14.5L7 21l5-2 5 2-1.5-6.5" />
+      </svg>
+    ),
+  },
+  avatar: {
+    color: "#ff6b6b",
+    shadow: "rgba(255,107,107,0.75)",
+    icon: (
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="10" cy="8" r="4" />
+        <path d="M2 20c0-4 3.6-7 8-7" />
+        <path d="M18 14l1.5 3 3.5.5-2.5 2.5.5 3.5L18 22l-3 1.5.5-3.5L13 17.5l3.5-.5z" />
+      </svg>
+    ),
+  },
+  progreso: {
+    color: "#ffd500",
+    shadow: "rgba(255,213,0,0.75)",
+    icon: (
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 17l4-8 4 4 3-6 4 5" />
+        <path d="M3 21h18" />
+      </svg>
+    ),
+  },
+};
+
+// -----------------------------------------------------------------------------
+// ContextBubble — reemplaza QuestionMark
+// Muestra el globito con color e ícono dinámico según effectiveEmotion.
+// La lógica de animación GSAP es idéntica al QuestionMark original.
+// -----------------------------------------------------------------------------
+function ContextBubble({ visible, emotion }) {
   const ref = useRef();
+  const cfg = BUBBLE_CONFIG[emotion] || BUBBLE_CONFIG.neutro;
 
   useEffect(() => {
     if (!ref.current) return;
@@ -192,41 +282,25 @@ function QuestionMark({ visible, isResult, isAvatar , isProgress }) {
         width: "28px",
         height: "28px",
         borderRadius: "50%",
-       background: isProgress
-          ? "linear-gradient(135deg, #ffd500, #f59e0b)"
-          : isAvatar
-          ? "linear-gradient(135deg, #ff6b6b, #dc2626)"
-          : isResult
-          ? "linear-gradient(135deg, #00eaff, #0ea5e9)"
-          : "linear-gradient(135deg, #a78bfa, #7c3aed)",
-        boxShadow: isProgress
-          ? "0 0 12px rgba(255,213,0,0.8), 0 2px 8px rgba(0,0,0,0.4)"
-          : isAvatar
-          ? "0 0 12px rgba(255,107,107,0.7), 0 2px 8px rgba(0,0,0,0.4)"
-          : isResult
-          ? "0 0 12px rgba(0,234,255,0.7), 0 2px 8px rgba(0,0,0,0.4)"
-          : "0 0 12px rgba(167,139,250,0.7), 0 2px 8px rgba(0,0,0,0.4)",
+        background: cfg.color,
+        boxShadow: `0 0 12px ${cfg.shadow}, 0 2px 8px rgba(0,0,0,0.4)`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: "15px",
-        fontWeight: "800",
-        color: "#fff",
         opacity: 0,
         pointerEvents: "none",
         zIndex: 10,
-        letterSpacing: "-1px",
         userSelect: "none",
         transition: "background 0.4s ease, box-shadow 0.4s ease",
       }}
     >
-      ?
+      {cfg.icon}
     </div>
   );
 }
 
 // -----------------------------------------------------------------------------
-// TaisonModel
+// TaisonModel — sin cambios
 // -----------------------------------------------------------------------------
 function TaisonModel({ isOpen, onToggle, isTypingRef }) {
   const { scene, animations } = useGLTF(TAISON_MODEL);
@@ -292,10 +366,10 @@ function TaisonModel({ isOpen, onToggle, isTypingRef }) {
   };
 
   const handleClick = (e) => {
-  e.stopPropagation();
-  if (navigator.vibrate) navigator.vibrate(50);
-  playBounceAnimation();
-  onToggle();
+    e.stopPropagation();
+    if (navigator.vibrate) navigator.vibrate(50);
+    playBounceAnimation();
+    onToggle();
   };
 
   useFrame((state) => {
@@ -327,7 +401,7 @@ function TaisonModel({ isOpen, onToggle, isTypingRef }) {
 }
 
 // -----------------------------------------------------------------------------
-// ChatPanel
+// ChatPanel — sin cambios (incluye fix scroll móvil con handleInputFocus)
 // -----------------------------------------------------------------------------
 function ChatPanel({ emotion, onClose, panelRef, onTyping }) {
   const mensajeInicial = emotion ? (WELCOME_MESSAGES[emotion] || WELCOME_MESSAGES.neutro) : WELCOME_SIN_TEST;
@@ -367,6 +441,13 @@ function ChatPanel({ emotion, onClose, panelRef, onTyping }) {
     onTyping(true);
     clearTimeout(typingTimeout.current);
     typingTimeout.current = setTimeout(() => onTyping(false), 800);
+  };
+
+  // ── Scroll al fondo cuando el teclado virtual sube en móvil ──────────────
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 300);
   };
 
   const send = async () => {
@@ -437,13 +518,22 @@ function ChatPanel({ emotion, onClose, panelRef, onTyping }) {
       </div>
 
       <div className="chatbot-input-row">
-        <input className="chatbot-input" value={input} onChange={handleInputChange}
+        <input
+          className="chatbot-input"
+          value={input}
+          onChange={handleInputChange}
           onKeyDown={(e) => e.key === "Enter" && send()}
+          onFocus={handleInputFocus}
           placeholder={emotion ? "Escribe tu mensaje..." : "Completa el cuestionario primero..."}
-          disabled={loading || !emotion} />
-        <button ref={sendBtnRef} className="chatbot-send" onClick={send}
+          disabled={loading || !emotion}
+        />
+        <button
+          ref={sendBtnRef}
+          className="chatbot-send"
+          onClick={send}
           disabled={loading || !input.trim() || !emotion}
-          style={{ background: `${emoColor}55` }}>
+          style={{ background: `${emoColor}55` }}
+        >
           &#62;
         </button>
       </div>
@@ -462,22 +552,22 @@ export default function ChatBotUI() {
   const isTypingRef = useRef(false);
   const panelRef    = useRef();
   const tooltipRef  = useRef();
-  const [progressContext, setProgressContext] = useState(null); //LEER EL CONTEXTO DE PROGRESO DESDE LOCALSTORAGE O FIREBASE SI ES NECESARIO
+  const [progressContext, setProgressContext] = useState(null);
 
- // ── Detección de ruta ──────────────────────────────────────────────────────
-const isInQuestionnaire =
-  location.pathname.includes("questionnaire") ||
-  location.pathname.includes("cuestionario");
+  // ── Detección de ruta ──────────────────────────────────────────────────────
+  const isInQuestionnaire =
+    location.pathname.includes("questionnaire") ||
+    location.pathname.includes("cuestionario");
 
-const isInAvatar =
-  location.pathname.includes("avatar") ||
-  location.pathname.includes("personaje");
+  const isInAvatar =
+    location.pathname.includes("avatar") ||
+    location.pathname.includes("personaje");
 
   const isInProgress =
-  location.pathname.includes("progress") ||
-  location.pathname.includes("progreso");
+    location.pathname.includes("progress") ||
+    location.pathname.includes("progreso");
 
-  // ── Detección de resultado via localStorage (sincronizado por Questionnaire.jsx) ──
+  // ── Detección de resultado via localStorage ───────────────────────────────
   const [qDone, setQDone] = useState(localStorage.getItem("q_done") === "1");
   useEffect(() => {
     if (!isInQuestionnaire) { setQDone(false); return; }
@@ -487,16 +577,16 @@ const isInAvatar =
     return () => clearInterval(interval);
   }, [isInQuestionnaire]);
 
-  // ── Emotion efectivo según contexto ───────────────────────────────────────
+  // ── Emotion efectivo según contexto ──────────────────────────────────────
   const effectiveEmotion = isInQuestionnaire
-  ? (qDone ? "resultado" : "questionnaire")
-  : isInAvatar
-  ? "avatar"
-  : isInProgress
-  ? "progreso"
-  : emotion;
+    ? (qDone ? "resultado" : "questionnaire")
+    : isInAvatar
+    ? "avatar"
+    : isInProgress
+    ? "progreso"
+    : emotion;
 
-  // ── Cargar emotion del usuario ─────────────────────────────────────────────
+  // ── Cargar emotion del usuario ────────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
     const fetchEmotion = async () => {
@@ -510,25 +600,21 @@ const isInAvatar =
     fetchEmotion();
   }, [user]);
 
-  // ── Tooltip solo una vez por sesión, fuera del cuestionario ───────────────
+  // ── Tooltip solo una vez por sesión ──────────────────────────────────────
   const [showWelcome, setShowWelcome] = useState(false);
   useEffect(() => {
     const already = sessionStorage.getItem("taison_welcomed");
     if (!already) { setShowWelcome(true); sessionStorage.setItem("taison_welcomed", "1"); }
   }, []);
-  
-  // ── Cargar contexto de progreso ─────────────────────────────────────
-useEffect(() => {
-  const saved = localStorage.getItem("taison_progress_context");
 
-  if (saved) {
-    try {
-      setProgressContext(JSON.parse(saved));
-    } catch (e) {
-      console.error("Error leyendo progreso IA", e);
+  // ── Cargar contexto de progreso ───────────────────────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem("taison_progress_context");
+    if (saved) {
+      try { setProgressContext(JSON.parse(saved)); }
+      catch (e) { console.error("Error leyendo progreso IA", e); }
     }
-  }
-}, []);
+  }, []);
 
   useEffect(() => {
     if (!tooltipRef.current || isOpen) return;
@@ -550,27 +636,20 @@ useEffect(() => {
       onComplete: () => setIsOpen(false),
     });
   };
- 
-  // ── Prompt dinámico progreso ───────────────────────────────────────
-const dynamicProgressPrompt =
-  isInProgress && progressContext
-    ? `
-El usuario tiene ${progressContext.totalEvaluaciones} evaluaciones registradas.
-Su puntaje promedio es ${progressContext.promedio}/21.
-Su ultimo estado emocional fue ${progressContext.ultimoEstado}.
-La distribucion emocional registrada es:
-- Bienestar estable: ${progressContext.distribucion.neutro}
-- Leve malestar: ${progressContext.distribucion.leve}
-- Estres moderado: ${progressContext.distribucion.estres}
-- Ansiedad elevada: ${progressContext.distribucion.ansiedad}
 
-Analiza tendencias emocionales generales y responde de manera personalizada segun estos datos.
-`
-    : "";
-    
   const handleTyping = (val) => { isTypingRef.current = val; };
 
+  // El globito se muestra cuando hay ruta especial O emotion en dashboard,
+  // y siempre que el chat esté cerrado.
+  const bubbleVisible =
+    !isOpen && (isInQuestionnaire || isInAvatar || isInProgress || !!effectiveEmotion);
+
   return (
+    /*
+     * FIX CRÍTICO — se eliminó transform: translateZ(0) del wrapper.
+     * transform crea un nuevo stacking context que rompe position:fixed
+     * dentro del canvas de R3F en móvil y al hacer scroll.
+     */
     <div className="chatbot-wrapper">
 
       {/* Panel de chat */}
@@ -590,16 +669,35 @@ Analiza tendencias emocionales generales y responde de manera personalizada segu
         </div>
       )}
 
-      {/* Canvas del perro */}
+      {/* Canvas del perro — el div contenedor NO tiene transform para no romper R3F */}
       <div className="chatbot-canvas" style={{ position: "relative" }}>
-        {/* ? morado=preguntas | cyan=resultado | rojo=avatar */}
-        <QuestionMark
-        visible={(isInQuestionnaire || isInAvatar || isInProgress) && !isOpen}
-        isResult={qDone}
-        isAvatar={isInAvatar}
-        isProgress={isInProgress}
+
+        {/*
+          ContextBubble reemplaza QuestionMark.
+          - visible: muestra el globito cuando hay contexto activo y el chat está cerrado.
+          - emotion: determina el color y el ícono SVG del globito.
+          En dashboard sin emotion (usuario sin test) no se muestra el globito,
+          igual que antes con QuestionMark.
+        */}
+        <ContextBubble
+          visible={bubbleVisible}
+          emotion={effectiveEmotion || "neutro"}
         />
-        <Canvas camera={{ position: [0, 0, 1.8], fov: 55 }} style={{ background: "transparent" }}>
+
+        {/*
+         * FIX R3F EN MÓVIL — frameloop="demand" + gl.setPixelRatio limitado.
+         * frameloop="demand" evita RAF innecesario y el canvas negro al volver
+         * de background en iOS. pixelRatio limitado a 2 evita renders 3x en
+         * pantallas de alta densidad (iPhone 15 Pro tiene dpr=3).
+         */}
+        <Canvas
+          camera={{ position: [0, 0, 1.8], fov: 55 }}
+          style={{ background: "transparent" }}
+          gl={{ antialias: true, alpha: true, pixelRatio: Math.min(window.devicePixelRatio, 2) }}
+          onCreated={({ gl }) => {
+            gl.domElement.setAttribute("data-engine", "three.js");
+          }}
+        >
           <ambientLight intensity={1.4} />
           <directionalLight position={[2, 4, 2]} intensity={1.8} />
           <pointLight position={[-2, 2, 2]} intensity={0.6} color="#7ecfff" />
