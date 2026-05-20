@@ -62,7 +62,6 @@
   overflow: hidden;
 }
 
-/* ── BARRA: usa --q-accent, animada con transition ── */
 .q-progress-fill {
   height: 100%;
   border-radius: 99px;
@@ -74,7 +73,7 @@
 }
 
 /* ════════════════════════════════
-   TARJETA
+   TARJETA PREGUNTA
    ════════════════════════════════ */
 .q-card-single {
   background: rgba(255,255,255,0.07);
@@ -91,7 +90,6 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ── ICONO: usa --q-accent ── */
 .q-card-icon-wrap {
   width: 56px;
   height: 56px;
@@ -120,25 +118,8 @@
   letter-spacing: 0.2px;
 }
 
-/* badge fuente bibliográfica */
-.q-source-badge {
-  display: inline-block;
-  font-size: 0.65rem;
-  letter-spacing: 0.5px;
-  padding: 3px 10px;
-  border-radius: 99px;
-  margin-bottom: 20px;
-  font-weight: 600;
-  color: var(--q-accent, #7ecfff);
-  background: color-mix(in srgb, var(--q-accent, #7ecfff) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--q-accent, #7ecfff) 28%, transparent);
-  transition: color 0.9s ease, background 0.9s ease, border-color 0.9s ease;
-}
-
 /* ════════════════════════════════
    ESCALA LIKERT HORIZONTAL
-   línea = <div> real en JSX
-   círculos encima con z-index:1
    ════════════════════════════════ */
 .q-scale-wrapper { display: flex; flex-direction: column; gap: 10px; }
 
@@ -149,7 +130,6 @@
   justify-content: space-between;
 }
 
-/* línea base — primer elemento del DOM */
 .q-scale-line {
   position: absolute;
   top: 22px;
@@ -162,7 +142,6 @@
   pointer-events: none;
 }
 
-/* relleno de progreso — usa --q-accent */
 .q-scale-line-fill {
   position: absolute;
   top: 0; left: 0;
@@ -172,7 +151,6 @@
   transition: width 0.35s ease, background 0.9s ease;
 }
 
-/* cada botón */
 .q-option-card {
   position: relative;
   z-index: 1;
@@ -184,13 +162,22 @@
   align-items: center;
   gap: 10px;
   padding: 0;
+  min-height: 44px;
   width: 25%;
   color: white;
   transition: transform 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .q-option-card:hover { transform: translateY(-4px); }
 
-/* círculo — fondo sólido tapa la línea */
+@media (hover: none) {
+  .q-option-card:hover { transform: none; }
+  .q-option-card:hover .q-opt-circle { border-color: rgba(255,255,255,0.2); }
+  .q-option-card:hover .q-opt-value  { color: rgba(255,255,255,0.42); }
+  .q-option-card:hover .q-opt-label  { color: rgba(255,255,255,0.52); }
+}
+
 .q-opt-circle {
   width: 44px;
   height: 44px;
@@ -205,8 +192,6 @@
 .q-option-card:hover .q-opt-circle {
   border-color: color-mix(in srgb, var(--q-accent, #7ecfff) 60%, transparent);
 }
-
-/* seleccionado — usa --q-accent */
 .q-option-card.selected .q-opt-circle {
   background: var(--q-accent, #7ecfff);
   border-color: var(--q-accent, #7ecfff);
@@ -215,7 +200,6 @@
   transition: background 0.9s ease, border-color 0.9s ease, box-shadow 0.9s ease;
 }
 
-/* número */
 .q-opt-value {
   font-size: 1rem;
   font-weight: 800;
@@ -226,7 +210,6 @@
 .q-option-card:hover .q-opt-value    { color: var(--q-accent, #7ecfff); }
 .q-option-card.selected .q-opt-value { color: #0d1b2a; }
 
-/* etiqueta */
 .q-opt-label {
   font-size: 0.75rem;
   font-weight: 600;
@@ -242,7 +225,6 @@
   transition: color 0.9s ease;
 }
 
-/* subetiqueta */
 .q-opt-sub {
   font-size: 0.66rem;
   color: rgba(255,255,255,0.26);
@@ -250,18 +232,24 @@
   line-height: 1.3;
 }
 
-/* extremos */
 .q-scale-extremes { display: flex; justify-content: space-between; padding: 0 2px; }
 .q-scale-extreme  { font-size: 0.66rem; color: rgba(255,255,255,0.2); letter-spacing: 0.4px; }
 
 /* ════════════════════════════════
-   NAVEGACIÓN
+   NAVEGACIÓN PREGUNTAS
    ════════════════════════════════ */
 .q-nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 28px;
+  gap: 12px
+}
+
+.q-btn-back,
+.q-btn-next {
+  flex: 1;
+  justify-content: center;
 }
 .q-btn-back {
   display: flex; align-items: center; gap: 6px;
@@ -270,18 +258,21 @@
   color: rgba(255,255,255,0.55);
   padding: 9px 18px; border-radius: 10px;
   font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .q-btn-back:hover:not(:disabled) { border-color: rgba(255,255,255,0.35); color: #fff; }
-.q-btn-back:disabled { opacity: 0.22; cursor: not-allowed; }
+.q-btn-back:disabled { opacity: 0.22; cursor: not-allowed; pointer-events: none; }
 
-/* botón siguiente — usa --q-accent */
 .q-btn-next {
   display: flex; align-items: center; gap: 6px;
   background: color-mix(in srgb, var(--q-accent, #7ecfff) 15%, transparent);
   border: 1.5px solid color-mix(in srgb, var(--q-accent, #7ecfff) 38%, transparent);
-  color: #fff; padding: 9px 22px; border-radius: 10px;
+  color: #fff; padding: 13px 18px; border-radius: 10px;
   font-size: 0.85rem; font-weight: 600; cursor: pointer;
   transition: background 0.9s ease, border-color 0.9s ease, transform 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .q-btn-next:hover {
   background: color-mix(in srgb, var(--q-accent, #7ecfff) 26%, transparent);
@@ -297,86 +288,183 @@
   width: 8px; height: 8px; border-radius: 99px;
   background: rgba(255,255,255,0.14);
   cursor: pointer; transition: all 0.3s ease;
+  padding: 8px; margin: -8px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .q-dot.answered { background: color-mix(in srgb, var(--q-accent, #7ecfff) 40%, transparent); }
 .q-dot.active   { background: var(--q-accent, #7ecfff); width: 24px; }
 
 /* ════════════════════════════════
-   PANTALLA RESULTADO
+   PANTALLA RESULTADO — layout compacto
    ════════════════════════════════ */
-.q-result-screen { text-align: center; animation: cardIn 0.4s ease both; }
-.q-result-icon-big { display: flex; justify-content: center; margin-bottom: 16px; filter: drop-shadow(0 0 20px currentColor); }
-.q-result-title { font-size: 2rem; font-weight: 800; margin-bottom: 8px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-.q-result-desc { font-size: 0.95rem; opacity: 0.7; margin-bottom: 32px; }
-.q-score-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 32px; }
-.q-score-center { position: absolute; display: flex; flex-direction: column; align-items: center; }
-.q-score-num { font-size: 2.2rem; font-weight: 900; line-height: 1; }
-.q-score-max { font-size: 0.78rem; opacity: 0.5; }
-.q-dimension-breakdown { display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
-.q-dim-item { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; }
-.q-dim-label { width: 70px; text-align: left; font-weight: 600; opacity: 0.85; }
-.q-dim-bar-track { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
-.q-dim-bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
-.q-dim-val { font-size: 0.78rem; font-weight: 700; width: 36px; text-align: right; }
-.q-answers-summary {
-  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 16px; padding: 16px; margin-bottom: 28px;
-  display: flex; flex-direction: column; gap: 12px;
-  text-align: left; max-height: 260px; overflow-y: auto;
+.q-result-screen {
+  text-align: center;
+  animation: cardIn 0.4s ease both;
+  /* Scroll nativo si el contenido supera la pantalla */
+  max-height: calc(100dvh - 100px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
 }
-.q-answers-summary::-webkit-scrollbar { width: 4px; }
-.q-answers-summary::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 99px; }
-.q-summary-row { display: flex; align-items: flex-start; gap: 10px; font-size: 0.82rem; }
-.q-summary-q { flex: 1; opacity: 0.7; line-height: 1.4; }
-.q-summary-a { font-weight: 700; font-size: 0.78rem; white-space: nowrap; }
-.q-result-actions { display: flex; gap: 12px; justify-content: center; }
-.q-btn-submit {
-  display: flex; align-items: center; gap: 8px;
-  background: rgba(126,207,255,0.15); border: 1.5px solid rgba(126,207,255,0.4);
-  color: #fff; padding: 12px 28px; border-radius: 12px;
-  font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.25s;
-}
-.q-btn-submit:hover:not(:disabled) {
-  background: rgba(126,207,255,0.25); border-color: #7ecfff;
-  box-shadow: 0 8px 24px rgba(126,207,255,0.2); transform: translateY(-2px);
-}
-.q-btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
-.q-btn-home {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: transparent; border: none; color: rgba(255,255,255,0.45);
-  font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase;
-  cursor: pointer; padding: 0; margin-bottom: 14px; transition: color 0.2s;
-}
-.q-btn-home:hover { color: #7ecfff; }
+.q-result-screen::-webkit-scrollbar { width: 3px; }
+.q-result-screen::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 99px; }
 
-/* ════════════════════════════════
-   RESPONSIVE
-   ════════════════════════════════ */
-@media (max-width: 540px) {
-  .q-card-single { padding: 28px 18px; }
-  .q-opt-sub     { display: none; }
-  .q-opt-circle  { width: 38px; height: 38px; }
-  .q-opt-value   { font-size: 0.88rem; }
-  .q-opt-label   { font-size: 0.68rem; }
-  .q-scale-line  { top: 19px; left: 19px; right: 19px; }
+/* ── Cabecera: icono + título + desc en fila ── */
+.q-result-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.11);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  text-align: left;
 }
-/* ── Taison Insight en resultado ── */
+.q-result-icon-big {
+  display: flex;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 14px currentColor);
+  /* reset del estilo antiguo que lo centraba solo */
+  margin: 0;
+  justify-content: unset;
+}
+.q-result-header-text { flex: 1; min-width: 0; }
+.q-result-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin-bottom: 3px;
+  line-height: 1.2;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+}
+.q-result-desc {
+  font-size: 0.8rem;
+  opacity: 0.65;
+  margin-bottom: 0;
+}
+
+/* ── Métricas: score ring + dimensiones lado a lado ── */
+.q-metrics-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.q-score-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  /* reset margin-bottom antiguo */
+  margin-bottom: 0;
+}
+.q-score-center {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.q-score-num  { font-size: 2rem; font-weight: 900; line-height: 1; }
+.q-score-max  { font-size: 0.72rem; opacity: 0.5; }
+
+.q-dimension-breakdown {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* reset margin-bottom antiguo */
+  margin-bottom: 0;
+}
+.q-dim-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
+.q-dim-label { width: 66px; text-align: left; font-weight: 600; opacity: 0.85; }
+.q-dim-bar-track { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
+.q-dim-bar-fill  { height: 100%; border-radius: 99px; transition: width 1s ease; }
+.q-dim-val { font-size: 0.75rem; font-weight: 700; width: 34px; text-align: right; }
+
+/* ── Acordeón de respuestas ── */
+.q-answers-accordion {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  text-align: left;
+}
+
+.q-accordion-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.65);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s;
+}
+.q-accordion-toggle:hover { color: #fff; }
+.q-accordion-toggle svg   { transition: transform 0.3s ease; flex-shrink: 0; }
+.q-accordion-toggle.open svg { transform: rotate(180deg); }
+
+.q-accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(.4,0,.2,1);
+}
+.q-accordion-body.open {
+  max-height: 300px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.q-accordion-body::-webkit-scrollbar { width: 3px; }
+.q-accordion-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 99px; }
+
+/* el .q-answers-summary vive dentro del acordeón */
+.q-answers-summary {
+  padding: 4px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 0;
+  max-height: none;
+  overflow-y: visible;
+}
+.q-answers-summary::-webkit-scrollbar { display: none; }
+
+.q-summary-row { display: flex; align-items: flex-start; gap: 10px; font-size: 0.8rem; }
+.q-summary-q   { flex: 1; opacity: 0.7; line-height: 1.4; }
+.q-summary-a   { font-weight: 700; font-size: 0.76rem; white-space: nowrap; }
+
+/* ── Taison insight ── */
 .q-taison-insight {
   width: 100%;
   border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: 14px;
+  padding: 12px 14px;
   background: rgba(255,255,255,0.04);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  margin-bottom: 8px;
+  margin-bottom: 14px;
+  text-align: left;
 }
-
 .q-taison-bubble {
   border-left: 3px solid rgba(126,207,255,0.4);
   padding-left: 12px;
 }
-
 .q-taison-name {
   font-size: 11px;
   font-weight: 700;
@@ -385,10 +473,94 @@
   display: block;
   margin-bottom: 6px;
 }
-
 .q-taison-text {
   font-size: 13px;
   color: rgba(255,255,255,0.85);
   line-height: 1.6;
   margin: 0;
+}
+
+/* ════════════════════════════════
+   ACCIONES RESULTADO
+   — z-index encima del chatbot flotante —
+   ════════════════════════════════ */
+.q-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  position: relative;
+  z-index: 9999;
+}
+
+.q-btn-submit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: color-mix(in srgb, var(--q-accent, #7ecfff) 18%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--q-accent, #7ecfff) 50%, transparent);
+  color: #fff;
+  padding: 13px 28px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.25s, border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 9999;
+}
+.q-btn-submit:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--q-accent, #7ecfff) 28%, transparent);
+  border-color: var(--q-accent, #7ecfff);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--q-accent, #7ecfff) 25%, transparent);
+  transform: translateY(-2px);
+}
+.q-btn-submit:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+/* ════════════════════════════════
+   RESPONSIVE ≤ 540 px
+   ════════════════════════════════ */
+@media (max-width: 540px) {
+  .q-page {
+    padding: 60px 16px max(24px, env(safe-area-inset-bottom, 24px));
+  }
+
+  /* pregunta */
+  .q-card-single { padding: 28px 18px; }
+  .q-opt-sub     { display: none; }
+  .q-opt-circle  { width: 38px; height: 38px; }
+  .q-opt-value   { font-size: 0.88rem; }
+  .q-opt-label   { font-size: 0.68rem; }
+  .q-scale-line  { top: 19px; left: 19px; right: 19px; }
+
+  /* resultado: scroll cubre toda la pantalla */
+  .q-result-screen {
+    max-height: calc(100dvh - 60px);
+  }
+
+  /* cabecera más compacta */
+  .q-result-title { font-size: 1.1rem; }
+
+  /* métricas: apiladas en móvil estrecho */
+  .q-metrics-row { flex-direction: column; gap: 12px; }
+  .q-dimension-breakdown { width: 100%; }
+
+  /* botones en columna completa */
+  .q-result-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .q-btn-back,
+  .q-btn-submit {
+    width: 100%;
+    justify-content: center;
+    padding: 13px 18px;
+  }
+  .q-result-actions .q-btn-back { flex: none; }
 }

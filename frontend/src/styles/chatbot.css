@@ -3,45 +3,22 @@
 /* ── Wrapper principal ── */
 .chatbot-wrapper {
   position: fixed;
-  bottom: 0;               /* FIX: antes -70px/-50px, lo cortaba en móvil con browser bar dinámico */
+  /* FIX POSICIÓN: subimos el perrito de bottom:0 a bottom:16px para que
+     quede en la esquina y no se superponga con los botones de la página.
+     El z-index baja de 1000 a 100 — suficiente para flotar sobre el contenido
+     normal, pero los botones del resultado tienen z-index:9999 y siempre
+     quedarán encima. */
+  bottom: 16px;
   right: 16px;
-  z-index: 1000;
+  z-index: 100;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   justify-content: flex-end;
   gap: 8px;
   pointer-events: all;
-
-  /*
-   * FIX CRÍTICO: se eliminó `transform: translateZ(0)` y `will-change`.
-   *
-   * Cualquier transform en un ancestro de position:fixed rompe el fixed en
-   * todos los browsers: el elemento deja de ser relativo al viewport y pasa
-   * a ser relativo al contenedor transformado. Esto causaba:
-   *   - El canvas de R3F quedaba en coordenadas incorrectas al hacer scroll.
-   *   - El chatbot "desaparecía" porque el canvas se renderizaba fuera del área.
-   *
-   * position:fixed ya está fuera del flujo normal; no necesita aceleración
-   * GPU extra. Eliminar el transform soluciona ambos bugs de una vez.
-   */
-
-  /*
-   * FIX ALTO MÁXIMO con dvh (dynamic viewport height).
-   *
-   * 100vh en móvil incluye la barra del navegador (Safari, Chrome Android).
-   * Cuando la barra se oculta al hacer scroll, el viewport real es más alto
-   * que 100vh, causando overflow. dvh es el viewport dinámico que ya excluye
-   * la barra del navegador y se recalcula cuando aparece/desaparece.
-   * El fallback a 100vh cubre navegadores sin soporte (< iOS 15.4, < Chrome 108).
-   */
-  max-height: calc(100vh - 32px);              /* fallback */
-  max-height: calc(100dvh - 32px);             /* dvh para móvil */
-
-  /*
-   * FIX iOS SAFE AREA: el bottom: 0 queda justo sobre el home indicator
-   * en iPhone X+. padding-bottom con safe-area-inset-bottom lo separa.
-   */
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -56,33 +33,17 @@
   position: relative;
   -webkit-tap-highlight-color: transparent;
   outline: none;
-
-  /*
-   * FIX CANVAS EN BLANCO EN MÓVIL:
-   * El canvas de R3F (WebGL) puede quedar negro/blanco cuando:
-   *   1. La página vuelve de background (iOS suspende WebGL contexts).
-   *   2. El contenedor tiene overflow:hidden con transform (ya corregido arriba).
-   *   3. El canvas tiene opacity:0 heredado de algún padre.
-   *
-   * Estas propiedades garantizan visibilidad correcta:
-   */
   opacity: 1 !important;
   visibility: visible !important;
-  /* Sin overflow:hidden para no cortar el canvas WebGL */
   overflow: visible;
 }
 
-/*
- * FIX CANVAS WEBGL: el canvas interno de R3F debe tener display:block
- * y NO tener ningún transform heredado que rompa sus coordenadas.
- */
 .chatbot-canvas canvas {
   display: block !important;
-  /* touch-action:none solo en el canvas, no en el wrapper */
   touch-action: none;
 }
 
-/* ── Tooltip (nube apuntando al perrito) ── */
+/* ── Tooltip ── */
 .chatbot-tooltip {
   position: relative;
   background: rgba(255, 255, 255, 0.08);
@@ -103,34 +64,28 @@
   transition: border-color 0.2s;
   flex-shrink: 0;
 }
-/* Borde del triángulo */
 .chatbot-tooltip::after {
   content: "";
   position: absolute;
   bottom: -8px;
   right: 22px;
-  width: 0;
-  height: 0;
+  width: 0; height: 0;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
   border-top: 8px solid rgba(255, 255, 255, 0.15);
 }
-/* Relleno del triángulo */
 .chatbot-tooltip::before {
   content: "";
   position: absolute;
   bottom: -6px;
   right: 23px;
-  width: 0;
-  height: 0;
+  width: 0; height: 0;
   border-left: 7px solid transparent;
   border-right: 7px solid transparent;
   border-top: 7px solid rgba(15, 15, 25, 0.75);
   z-index: 1;
 }
-.chatbot-tooltip:hover {
-  border-color: rgba(126, 207, 255, 0.35);
-}
+.chatbot-tooltip:hover { border-color: rgba(126, 207, 255, 0.35); }
 
 /* ── Panel de chat ── */
 .chatbot-panel {
@@ -152,14 +107,6 @@
   opacity: 0;
   transform-origin: bottom right;
   flex-shrink: 1;
-
-  /*
-   * FIX: se eliminó will-change:transform y transform:translateZ(0) del panel.
-   * Estos triggers de composición en un hijo de position:fixed causan que el
-   * panel quede fuera de posición en ciertos navegadores móviles al hacer
-   * scroll o al aparecer el teclado virtual. El panel ya tiene GPU compositing
-   * por sus animaciones GSAP (opacity/transform); no necesita will-change extra.
-   */
 }
 
 /* ── Header ── */
@@ -172,197 +119,120 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
 }
-.chatbot-header-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+.chatbot-header-left { display: flex; align-items: center; gap: 10px; }
 .chatbot-online-dot {
-  width: 9px;
-  height: 9px;
+  width: 9px; height: 9px;
   border-radius: 50%;
   flex-shrink: 0;
   transition: background 0.3s;
 }
 .chatbot-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  letter-spacing: 0.3px;
+  font-size: 14px; font-weight: 700; color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5); letter-spacing: 0.3px;
 }
-.chatbot-subtitle {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.45);
-  margin-top: 2px;
-  letter-spacing: 0.2px;
-}
+.chatbot-subtitle { font-size: 10px; color: rgba(255,255,255,0.45); margin-top: 2px; letter-spacing: 0.2px; }
 .chatbot-close {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  font-size: 12px;
-  width: 26px;
-  height: 26px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.6);
+  cursor: pointer; font-size: 12px;
+  width: 26px; height: 26px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
-  /* Área mínima de toque para móvil */
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 44px; min-height: 44px;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
 .chatbot-close:hover {
-  background: rgba(126, 207, 255, 0.15);
-  border-color: rgba(126, 207, 255, 0.3);
+  background: rgba(126,207,255,0.15);
+  border-color: rgba(126,207,255,0.3);
   color: #7ecfff;
 }
 
 /* ── Mensajes ── */
 .chatbot-messages {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1; overflow-y: auto;
   padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: flex; flex-direction: column; gap: 10px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(126, 207, 255, 0.15) transparent;
-  /* FIX iOS: momentum scrolling dentro del panel */
+  scrollbar-color: rgba(126,207,255,0.15) transparent;
   -webkit-overflow-scrolling: touch;
-  /* FIX: overscroll-behavior evita que el scroll del panel propague al body */
   overscroll-behavior: contain;
 }
 .chatbot-messages::-webkit-scrollbar { width: 3px; }
-.chatbot-messages::-webkit-scrollbar-thumb {
-  background: rgba(126, 207, 255, 0.15);
-  border-radius: 2px;
-}
+.chatbot-messages::-webkit-scrollbar-thumb { background: rgba(126,207,255,0.15); border-radius: 2px; }
 .chatbot-msg-row { display: flex; }
 .chatbot-msg-row.user { justify-content: flex-end; }
 .chatbot-msg-row.bot  { justify-content: flex-start; }
 .chatbot-bubble {
-  max-width: 82%;
-  font-size: 12.5px;
-  padding: 9px 13px;
-  line-height: 1.6;
-  opacity: 0;
-  transform: translateY(6px);
+  max-width: 82%; font-size: 12.5px;
+  padding: 9px 13px; line-height: 1.6;
+  opacity: 0; transform: translateY(6px);
 }
 .chatbot-bubble.bot {
-  background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.12);
   color: #e8f4ff;
   border-radius: 4px 14px 14px 14px;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 .chatbot-bubble.user {
-  background: rgba(126, 207, 255, 0.18);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(126, 207, 255, 0.25);
+  background: rgba(126,207,255,0.18);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(126,207,255,0.25);
   color: #fff;
   border-radius: 14px 4px 14px 14px;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
 /* ── Typing indicator ── */
-.chatbot-typing-row {
-  display: flex;
-  justify-content: flex-start;
-  opacity: 0;
-}
+.chatbot-typing-row { display: flex; justify-content: flex-start; opacity: 0; }
 .chatbot-typing-bubble {
-  background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 4px 14px 14px 14px;
   padding: 10px 14px;
-  display: flex;
-  gap: 5px;
-  align-items: center;
+  display: flex; gap: 5px; align-items: center;
 }
-.chatbot-typing-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #7ecfff;
-  opacity: 0.7;
-}
+.chatbot-typing-dot { width: 5px; height: 5px; border-radius: 50%; background: #7ecfff; opacity: 0.7; }
 
 /* ── Input row ── */
 .chatbot-input-row {
   padding: 12px 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.03);
-  /*
-   * FIX TECLADO VIRTUAL iOS/Android:
-   * Al hacer focus en el input el teclado virtual sube y comprime el viewport.
-   * padding-bottom con safe-area-inset-bottom asegura que el input-row no quede
-   * pegado al borde inferior ni tapado por el teclado en dispositivos con notch.
-   */
-  padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex; gap: 8px; flex-shrink: 0;
+  background: rgba(255,255,255,0.03);
+  bottom: -10px;
 }
 .chatbot-input {
   flex: 1;
-  background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 8px 12px;
-  color: #fff;
-  font-size: 12.5px;
-  outline: none;
-  font-family: inherit;
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px; padding: 8px 12px;
+  color: #fff; font-size: 12.5px; outline: none; font-family: inherit;
   transition: border-color 0.2s, background 0.2s;
-  /*
-   * FIX iOS: font-size mínimo de 16px para evitar el zoom automático al hacer
-   * focus en inputs en Safari (iOS hace zoom si font-size < 16px).
-   * Se sobreescribe solo en móvil abajo.
-   */
 }
-.chatbot-input:focus {
-  border-color: rgba(126, 207, 255, 0.4);
-  background: rgba(126, 207, 255, 0.08);
-}
-.chatbot-input::placeholder { color: rgba(255, 255, 255, 0.25); }
+.chatbot-input:focus { border-color: rgba(126,207,255,0.4); background: rgba(126,207,255,0.08); }
+.chatbot-input::placeholder { color: rgba(255,255,255,0.25); }
 .chatbot-input:disabled { opacity: 0.4; cursor: not-allowed; }
 .chatbot-send {
-  border: 1px solid rgba(126, 207, 255, 0.25);
-  border-radius: 12px;
-  color: #fff;
-  width: 36px;
-  height: 36px;
-  cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border: 1px solid rgba(126,207,255,0.25);
+  border-radius: 12px; color: #fff;
+  width: 36px; height: 36px;
+  cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
   transition: transform 0.15s, border-color 0.2s, background 0.2s;
   flex-shrink: 0;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  /* Área mínima de toque */
-  min-width: 44px;
-  min-height: 44px;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  min-width: 44px; min-height: 44px;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
-.chatbot-send:hover:not(:disabled) {
-  transform: scale(1.08);
-  border-color: rgba(126, 207, 255, 0.5);
-}
+.chatbot-send:hover:not(:disabled) { transform: scale(1.08); border-color: rgba(126,207,255,0.5); }
 .chatbot-send:active:not(:disabled) { transform: scale(0.95); }
 .chatbot-send:disabled { opacity: 0.3; cursor: not-allowed; }
 
@@ -371,17 +241,15 @@
 ============================================================================= */
 @media (max-width: 480px) {
   .chatbot-wrapper {
-    /*
-     * FIX: bottom:0 + padding-bottom safe-area (ya heredado del base).
-     * Antes bottom:-50px cortaba el perro. Con bottom:0 queda justo al borde
-     * y el safe-area-inset-bottom lo separa del home indicator en iPhone X+.
-     */
-    bottom: 0;
-    right: 8px;
-    left: 8px;
+    /* FIX: en móvil el perrito va en la esquina inferior derecha con margen
+       mínimo para no pegar con el borde. left:auto para que NO se extienda
+       de borde a borde (quitamos el left:8px del CSS original). */
+    bottom: -45px; /* mover el perrio hacia abajo */
+    right: -10px;
+    left: auto;               /* ← clave: solo esquina derecha, no ancho completo */
     align-items: flex-end;
-    max-height: calc(100vh - 16px);    /* fallback */
-    max-height: calc(100dvh - 16px);   /* dvh dinámico */
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
   }
 
   .chatbot-canvas {
@@ -390,29 +258,19 @@
     align-self: flex-end;
   }
 
-  .chatbot-tooltip {
-    display: none;
-  }
+  .chatbot-tooltip { display: none; }
 
+  /* El panel sí se extiende al ancho completo cuando se abre */
   .chatbot-panel {
-    width: 100%;
-    /*
-     * FIX PANEL APLASTADO CON TECLADO VIRTUAL:
-     * min() con dvh garantiza que el panel no supere el viewport dinámico.
-     * Antes usaba 60vh que no se recalcula cuando sube el teclado.
-     * Ahora usa svh (smallest viewport height = viewport con teclado visible)
-     * como tercer valor para el caso extremo.
-     *
-     * Fallback progresivo:
-     *   1. min(420px, 60vh)        — browsers sin dvh/svh
-     *   2. min(420px, 60dvh)       — dvh: se recalcula con browser bar
-     *   3. clamp(280px, 55svh, 420px) — svh: garantiza que cabe con teclado
-     */
-    height: min(420px, 60vh);          /* fallback */
-    height: min(420px, 60dvh);         /* dvh */
-    /* En la práctica el clamp con svh es el más seguro en teclado abierto: */
+    width: calc(100vw - 16px);
+    height: min(420px, 60vh);
+    height: min(420px, 60dvh);
     height: clamp(280px, 55svh, 420px);
     border-radius: 16px;
+    /* Panel anclado a la derecha aunque el wrapper sea estrecho */
+    position: fixed;
+    right: 8px;
+    bottom: calc(max(12px, env(safe-area-inset-bottom, 12px)) + 118px);
   }
 
   .chatbot-header        { padding: 12px 14px; }
@@ -426,22 +284,8 @@
     padding: 10px 12px;
     padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
   }
-
-  .chatbot-input {
-    /*
-     * FIX ZOOM iOS: font-size >= 16px previene el zoom automático de Safari
-     * al hacer focus en el input. Esto es un bug conocido de iOS que afecta
-     * inputs con font-size < 16px.
-     */
-    font-size: 16px;
-    padding: 8px 11px;
-  }
-
-  .chatbot-send {
-    width: 34px;
-    height: 34px;
-    font-size: 13px;
-  }
+  .chatbot-input  { font-size: 16px; padding: 8px 11px; }
+  .chatbot-send   { width: 34px; height: 34px; font-size: 13px; }
 }
 
 /* =============================================================================
@@ -453,22 +297,10 @@
 }
 
 /* =============================================================================
-   ORIENTACIÓN LANDSCAPE EN MÓVIL
-   El panel no puede ser muy alto si el viewport tiene poca altura vertical.
+   LANDSCAPE MÓVIL
 ============================================================================= */
 @media (max-width: 768px) and (orientation: landscape) {
-  .chatbot-panel {
-    height: min(320px, 80dvh);
-  }
-
-  .chatbot-canvas {
-    width: 90px;
-    height: 90px;
-  }
-
-  .chatbot-wrapper {
-    bottom: 0;
-    right: 12px;
-    gap: 4px;
-  }
+  .chatbot-panel  { height: min(320px, 80dvh); }
+  .chatbot-canvas { width: 90px; height: 90px; }
+  .chatbot-wrapper { bottom: 0; right: 12px; gap: 4px; }
 }
