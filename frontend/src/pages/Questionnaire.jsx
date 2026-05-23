@@ -15,20 +15,80 @@ import "../styles/questionnaire.css";
 import { useAppNavigate } from "../providers/NavigationContext";
 
 const QUESTIONS = [
-  { id: "q1", text: "Me he sentido nervioso/a, ansioso/a o con los nervios de punta.",             icon: Wind,       dimension: "ansiedad" },
-  { id: "q2", text: "No he podido dejar de preocuparme o controlar mis preocupaciones.",           icon: Brain,      dimension: "ansiedad" },
-  { id: "q3", text: "Me he sentido triste o con el ánimo muy bajo sin saber bien por qué.",        icon: Frown,      dimension: "ansiedad" },
-  { id: "q4", text: "Me ha costado concentrarme en mis actividades académicas.",                   icon: BookOpen,   dimension: "estres"   },
-  { id: "q5", text: "Me he sentido agotado/a o con poca energía durante el día.",                  icon: BatteryLow, dimension: "estres"   },
-  { id: "q6", text: "He tenido síntomas físicos como palpitaciones, sudoración o sensación de ahogo al estresarme.", icon: Zap, dimension: "ansiedad" },
-  { id: "q7", text: "He tenido pensamientos negativos sobre mi futuro o he sentido que no soy suficientemente capaz.", icon: HeartCrack, dimension: "estres" },
+  {
+    id: "q1",
+    text: "He sentido preocupación, nervios o tensión emocional durante mis días.",
+    icon: Wind,
+    dimension: "ansiedad"
+  },
+
+  {
+    id: "q2",
+    text: "He sentido que mis preocupaciones ocupan gran parte de mis pensamientos.",
+    icon: Brain,
+    dimension: "ansiedad"
+  },
+
+  {
+    id: "q3",
+    text: "He tenido momentos de tristeza, desánimo o poca motivación emocional.",
+    icon: Frown,
+    dimension: "ansiedad"
+  },
+
+  {
+    id: "q4",
+    text: "He tenido dificultades para concentrarme o mantenerme enfocado/a en mis actividades académicas.",
+    icon: BookOpen,
+    dimension: "estres"
+  },
+
+  {
+    id: "q5",
+    text: "He sentido cansancio físico o mental incluso después de descansar.",
+    icon: BatteryLow,
+    dimension: "estres"
+  },
+
+  {
+    id: "q6",
+    text: "He notado reacciones físicas como tensión, palpitaciones o dificultad para relajarme en momentos de estrés.",
+    icon: Zap,
+    dimension: "ansiedad"
+  },
+
+  {
+    id: "q7",
+    text: "He tenido dudas sobre mis capacidades o preocupación por mi futuro académico y personal.",
+    icon: HeartCrack,
+    dimension: "estres"
+  },
 ];
 
 const OPTIONS = [
-  { value: 0, label: "Nunca",           sublabel: "No me ha ocurrido"  },
-  { value: 1, label: "Varios días",     sublabel: "Algunas veces"      },
-  { value: 2, label: "Más de la mitad", sublabel: "Con frecuencia"     },
-  { value: 3, label: "Casi siempre",    sublabel: "La mayoría de días" },
+  {
+    value: 0,
+    label: "Nunca",
+    sublabel: "Todo tranquilo"
+  },
+
+  {
+    value: 1,
+    label: "Algunos días",
+    sublabel: "Pasó ocasionalmente"
+  },
+
+  {
+    value: 2,
+    label: "Frecuente",
+    sublabel: "Me ocurrió seguido"
+  },
+
+  {
+    value: 3,
+    label: "Muy frecuente",
+    sublabel: "Me afectó casi diario"
+  },
 ];
 
 const STEP_COLORS = [
@@ -106,15 +166,17 @@ export default function Questionnaire() {
     playSound("select");
     if (navigator.vibrate) navigator.vibrate(40);
     setTimeout(() => {
-      if (step < QUESTIONS.length - 1) {
-        playSound("advance");
-        if (navigator.vibrate) navigator.vibrate([30, 30, 30]);
-        setStep(s => s + 1);
-      } else {
-        playSound("finish");
-        if (navigator.vibrate) navigator.vibrate([50, 30, 50, 30, 100]);
-        setDone(true);
+    if (step < QUESTIONS.length - 1) {
+      playSound("advance");
+
+    if (navigator.vibrate) {
+        navigator.vibrate([30, 30, 30]);
       }
+
+      setStep(s => s + 1);
+    } else {
+      playSound("select");
+    }
     }, 320);
   };
 
@@ -201,6 +263,9 @@ export default function Questionnaire() {
             <div className="q-result-header-text">
               <h2 className="q-result-title" style={{ color }}>{label}</h2>
               <p className="q-result-desc">{desc}</p>
+              <p className="q-result-note">
+               Tus respuestas reflejan un momento emocional actual, no definen quién eres.
+              </p>
             </div>
           </div>
 
@@ -270,7 +335,7 @@ export default function Questionnaire() {
           {/* ── 4. Taison Insight ── */}
           <div className="q-taison-insight" style={{ borderColor: color + "44" }}>
             <div className="q-taison-bubble" style={{ borderColor: color + "55" }}>
-              <span className="q-taison-name" style={{ color }}>🐾 Taison dice:</span>
+              <span className="q-taison-name" style={{ color }}>🐾 Pixel dice:</span>
               <p className="q-taison-text">
                 {result.key === "neutro"   && "¡Woof! Tu estado emocional se ve estable. Sigue cuidando tus hábitos de descanso y pausas activas cada 45 minutos durante el estudio. ¡Vas muy bien!"}
                 {result.key === "leve"     && "Woof, noto que has tenido momentos difíciles. Está bien no estar al 100%. Te recomiendo la técnica Pomodoro (25 min trabajo, 5 descanso) y escribir 5 minutos al día sobre cómo te sientes."}
@@ -301,7 +366,11 @@ export default function Questionnaire() {
       <div className="q-container">
 
         <div className="q-top">
-          <div className="q-step-label">Pregunta <b>{step + 1}</b> de {QUESTIONS.length}</div>
+          <p className="q-intro-text">
+           Este espacio fue creado para ayudarte a reconocer cómo te has sentido emocionalmente en los últimos días. No existen respuestas correctas o incorrectas.
+           </p>
+          <div className="q-step-label">
+            Bienestar emocional • <b>{step + 1}</b> de {QUESTIONS.length}</div>
           <div className="q-progress-bar">
             <div className="q-progress-fill" style={{ width: `${progress}%` }} />
           </div>
@@ -312,7 +381,7 @@ export default function Questionnaire() {
             <Icon size={30} strokeWidth={1.5} />
           </div>
           <p className="q-card-question">{current.text}</p>
-          <p className="q-card-hint">¿Con qué frecuencia en los últimos 7 días?</p>
+          <p className="q-card-hint">Piensa en cómo te has sentido emocionalmente durante la última semana.</p>
 
           <div className="q-scale-wrapper">
             <div className="q-scale-row">
@@ -344,11 +413,28 @@ export default function Questionnaire() {
           <button className="q-btn-back" onClick={handleBack} disabled={step === 0}>
             <ArrowLeft size={16} /> Anterior
           </button>
-          {answers[step] !== null && step < QUESTIONS.length - 1 && (
-            <button className="q-btn-next" onClick={() => setStep(s => s + 1)}>
-              Siguiente <ArrowRight size={16} />
-            </button>
-          )}
+          {answers[step] !== null && (
+  <button
+    className="q-btn-next"
+    onClick={() => {
+      if (step < QUESTIONS.length - 1) {
+        setStep(s => s + 1);
+      } else {
+        setDone(true);
+      }
+    }}
+  >
+    {step < QUESTIONS.length - 1 ? (
+      <>
+        Siguiente <ArrowRight size={16} />
+      </>
+    ) : (
+      <>
+        Finalizar <CheckCircle size={16} />
+      </>
+    )}
+  </button>
+)}
         </div>
 
         <div className="q-dots">
