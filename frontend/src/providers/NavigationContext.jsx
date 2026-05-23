@@ -3,7 +3,7 @@
 //
 // FLUJO SIN FLASH BLANCO:
 //   1. Página A llama navigate(path, msg)
-//      → loading se activa + React navega inmediatamente a la nueva ruta
+//      loading se activa + React navega inmediatamente a la nueva ruta
 //   2. Página B monta DETRÁS del loading (usuario no ve nada blanco)
 //   3. Página B llama usePageReady() al montar
 //      → loading desaparece, usuario ve la página ya lista
