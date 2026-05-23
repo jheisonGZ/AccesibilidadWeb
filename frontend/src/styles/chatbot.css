@@ -8,8 +8,8 @@
      El z-index baja de 1000 a 100 — suficiente para flotar sobre el contenido
      normal, pero los botones del resultado tienen z-index:9999 y siempre
      quedarán encima. */
-  bottom: 16px;
-  right: 16px;
+  bottom: -70px;
+  right: 58px;
   z-index: 100;
   display: flex;
   flex-direction: column;

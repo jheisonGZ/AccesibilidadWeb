@@ -12,10 +12,10 @@ import { gsap } from "gsap";
 import { useLocation } from "react-router-dom";
 import "../styles/chatbot.css";
 
-const TAISON_MODEL = "/models/taison.glb";
+const PIXEL_MODEL = "/models/pixel.glb";
 
 const BASE_PROMPT =
-  "Eres Taison, un asistente virtual de bienestar emocional creado exclusivamente " +
+  "Eres Pixel, un asistente virtual de bienestar emocional creado exclusivamente " +
   "para los estudiantes de la Escuela de Ingenieria de Sistemas y Computacion (EISC) " +
   "de la Universidad del Valle, en Santiago de Cali, Colombia. " +
   "PROPOSITO: Brindar acompanamiento emocional, orientacion en autocuidado y recursos " +
@@ -96,36 +96,36 @@ const SYSTEM_PROMPTS = {
 
 const WELCOME_MESSAGES = {
   neutro:
-    "Woof! Hola, soy Taison. Tu estado emocional se ve estable hoy, y eso vale la pena cuidar. " +
+    "Woof! Hola, soy Pixel. Tu estado emocional se ve estable hoy, y eso vale la pena cuidar. " +
     "En que puedo acompanarte?",
   leve:
-    "Woof! Hola, soy Taison. Veo que has tenido algunos momentos dificiles ultimamente. " +
+    "Woof! Hola, soy Pixel. Veo que has tenido algunos momentos dificiles ultimamente. " +
     "Estoy aqui para escucharte sin juzgarte. Que esta pasando?",
   estres:
-    "Woof! Hola, soy Taison. Noto que estas cargando bastante estres. " +
+    "Woof! Hola, soy Pixel. Noto que estas cargando bastante estres. " +
     "La EISC puede ser muy exigente y eso es real. Cuentame, por donde quieres empezar?",
   ansiedad:
-    "Woof... Hola, soy Taison. No estas solo en esto. Hagamos un ejercicio juntos: " +
+    "Woof... Hola, soy Pixel. No estas solo en esto. Hagamos un ejercicio juntos: " +
     "inhala 4 segundos, sostiene 7, exhala 8. Cuando estes listo, cuentame.",
   questionnaire:
-    "Woof! Hola, soy Taison. Veo que estas completando tu autoevaluacion emocional. " +
+    "Woof! Hola, soy Pixel. Veo que estas completando tu autoevaluacion emocional. " +
     "No hay respuestas buenas ni malas, solo tu experiencia real. " +
     "Si tienes alguna duda sobre alguna pregunta, con gusto te ayudo.",
   resultado:
     "Woof! Ya tienes tu resultado. ¿Tienes alguna duda sobre lo que significa tu nivel emocional " +
     "o quieres saber que puedes hacer a partir de aqui? Estoy para ayudarte.",
   avatar:
-    "Woof! Hola, soy Taison. Estas eligiendo tu avatar para el entorno 3D de bienestar. " +
+    "Woof! Hola, soy Pixel. Estas eligiendo tu avatar para el entorno 3D de bienestar. " +
     "Cada personaje es unico pero todos te acompanan igual de bien. " +
     "¿Quieres que te cuente algo sobre cada uno para elegir mejor?",
   progreso:
-    "Woof! Hola, soy Taison. Veo que estas revisando tu progreso en la plataforma. " +
+    "Woof! Hola, soy Pixel. Veo que estas revisando tu progreso en la plataforma. " +
     "Recuerda que avanzar tambien significa reconocer pequenos pasos y no solo resultados perfectos. " +
     "Si quieres, puedo ayudarte a interpretar como vas y darte algunas recomendaciones para seguir mejorando.",
 };
 
 const WELCOME_SIN_TEST =
-  "Woof! Hola, soy Taison, tu companero de bienestar en la EISC. " +
+  "Woof! Hola, soy Pixel, tu companero de bienestar en la EISC. " +
   "Para acompanarte de la mejor forma, primero completa el cuestionario de autoevaluacion " +
   "emocional en el Dashboard. Cuando estes listo, vuelve y charlamos. Woof!";
 
@@ -151,10 +151,6 @@ const PATRONES_PROHIBIDOS = [
 const esTemaFueraDeScope = (texto) =>
   PATRONES_PROHIBIDOS.some((patron) => patron.test(texto));
 
-// -----------------------------------------------------------------------------
-// BUBBLE_CONFIG — color + ícono SVG por cada contexto/estado emocional
-// Reemplaza el ? genérico de QuestionMark por un globito con identidad propia.
-// -----------------------------------------------------------------------------
 const BUBBLE_CONFIG = {
   neutro: {
     color: "#00eaff",
@@ -241,11 +237,6 @@ const BUBBLE_CONFIG = {
   },
 };
 
-// -----------------------------------------------------------------------------
-// ContextBubble — reemplaza QuestionMark
-// Muestra el globito con color e ícono dinámico según effectiveEmotion.
-// La lógica de animación GSAP es idéntica al QuestionMark original.
-// -----------------------------------------------------------------------------
 function ContextBubble({ visible, emotion }) {
   const ref = useRef();
   const cfg = BUBBLE_CONFIG[emotion] || BUBBLE_CONFIG.neutro;
@@ -299,11 +290,8 @@ function ContextBubble({ visible, emotion }) {
   );
 }
 
-// -----------------------------------------------------------------------------
-// TaisonModel — sin cambios
-// -----------------------------------------------------------------------------
-function TaisonModel({ isOpen, onToggle, isTypingRef }) {
-  const { scene, animations } = useGLTF(TAISON_MODEL);
+function PixelModel({ isOpen, onToggle, isTypingRef }) {
+  const { scene, animations } = useGLTF(PIXEL_MODEL);
   const { actions } = useAnimations(animations, scene);
   const groupRef = useRef();
   const bounceAnimationRef = useRef(null);
@@ -400,9 +388,6 @@ function TaisonModel({ isOpen, onToggle, isTypingRef }) {
   );
 }
 
-// -----------------------------------------------------------------------------
-// ChatPanel — sin cambios (incluye fix scroll móvil con handleInputFocus)
-// -----------------------------------------------------------------------------
 function ChatPanel({ emotion, onClose, panelRef, onTyping }) {
   const mensajeInicial = emotion ? (WELCOME_MESSAGES[emotion] || WELCOME_MESSAGES.neutro) : WELCOME_SIN_TEST;
   const [messages, setMessages] = useState([{ role: "assistant", text: mensajeInicial }]);
@@ -443,7 +428,6 @@ function ChatPanel({ emotion, onClose, panelRef, onTyping }) {
     typingTimeout.current = setTimeout(() => onTyping(false), 800);
   };
 
-  // ── Scroll al fondo cuando el teclado virtual sube en móvil ──────────────
   const handleInputFocus = () => {
     setTimeout(() => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -491,7 +475,7 @@ function ChatPanel({ emotion, onClose, panelRef, onTyping }) {
         <div className="chatbot-header-left">
           <div className="chatbot-online-dot" style={{ background: emoColor, boxShadow: `0 0 8px ${emoColor}` }} />
           <div>
-            <div className="chatbot-title">Taison</div>
+            <div className="chatbot-title">Pixel</div>
             <div className="chatbot-subtitle">Bienestar EISC — Univalle</div>
           </div>
         </div>
@@ -554,7 +538,6 @@ export default function ChatBotUI() {
   const tooltipRef  = useRef();
   const [progressContext, setProgressContext] = useState(null);
 
-  // ── Detección de ruta ──────────────────────────────────────────────────────
   const isInQuestionnaire =
     location.pathname.includes("questionnaire") ||
     location.pathname.includes("cuestionario");
@@ -567,7 +550,6 @@ export default function ChatBotUI() {
     location.pathname.includes("progress") ||
     location.pathname.includes("progreso");
 
-  // ── Detección de resultado via localStorage ───────────────────────────────
   const [qDone, setQDone] = useState(localStorage.getItem("q_done") === "1");
   useEffect(() => {
     if (!isInQuestionnaire) { setQDone(false); return; }
@@ -577,7 +559,6 @@ export default function ChatBotUI() {
     return () => clearInterval(interval);
   }, [isInQuestionnaire]);
 
-  // ── Emotion efectivo según contexto ──────────────────────────────────────
   const effectiveEmotion = isInQuestionnaire
     ? (qDone ? "resultado" : "questionnaire")
     : isInAvatar
@@ -586,7 +567,6 @@ export default function ChatBotUI() {
     ? "progreso"
     : emotion;
 
-  // ── Cargar emotion del usuario ────────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
     const fetchEmotion = async () => {
@@ -600,16 +580,14 @@ export default function ChatBotUI() {
     fetchEmotion();
   }, [user]);
 
-  // ── Tooltip solo una vez por sesión ──────────────────────────────────────
   const [showWelcome, setShowWelcome] = useState(false);
   useEffect(() => {
-    const already = sessionStorage.getItem("taison_welcomed");
-    if (!already) { setShowWelcome(true); sessionStorage.setItem("taison_welcomed", "1"); }
+    const already = sessionStorage.getItem("pixel_welcomed");
+    if (!already) { setShowWelcome(true); sessionStorage.setItem("pixel_welcomed", "1"); }
   }, []);
 
-  // ── Cargar contexto de progreso ───────────────────────────────────────────
   useEffect(() => {
-    const saved = localStorage.getItem("taison_progress_context");
+    const saved = localStorage.getItem("pixel_progress_context");
     if (saved) {
       try { setProgressContext(JSON.parse(saved)); }
       catch (e) { console.error("Error leyendo progreso IA", e); }
@@ -639,20 +617,11 @@ export default function ChatBotUI() {
 
   const handleTyping = (val) => { isTypingRef.current = val; };
 
-  // El globito se muestra cuando hay ruta especial O emotion en dashboard,
-  // y siempre que el chat esté cerrado.
   const bubbleVisible =
     !isOpen && (isInQuestionnaire || isInAvatar || isInProgress || !!effectiveEmotion);
 
   return (
-    /*
-     * FIX CRÍTICO — se eliminó transform: translateZ(0) del wrapper.
-     * transform crea un nuevo stacking context que rompe position:fixed
-     * dentro del canvas de R3F en móvil y al hacer scroll.
-     */
     <div className="chatbot-wrapper">
-
-      {/* Panel de chat */}
       {isOpen && (
         <ChatPanel
           emotion={effectiveEmotion}
@@ -662,34 +631,18 @@ export default function ChatBotUI() {
         />
       )}
 
-      {/* Tooltip solo fuera del cuestionario y avatar */}
       {!isOpen && showWelcome && !isInQuestionnaire && !isInAvatar && (
         <div ref={tooltipRef} className="chatbot-tooltip" onClick={() => setIsOpen(true)}>
           {effectiveEmotion ? "Woof! En que puedo ayudarte" : "Haz el cuestionario primero"}
         </div>
       )}
 
-      {/* Canvas del perro — el div contenedor NO tiene transform para no romper R3F */}
       <div className="chatbot-canvas" style={{ position: "relative" }}>
-
-        {/*
-          ContextBubble reemplaza QuestionMark.
-          - visible: muestra el globito cuando hay contexto activo y el chat está cerrado.
-          - emotion: determina el color y el ícono SVG del globito.
-          En dashboard sin emotion (usuario sin test) no se muestra el globito,
-          igual que antes con QuestionMark.
-        */}
         <ContextBubble
           visible={bubbleVisible}
           emotion={effectiveEmotion || "neutro"}
         />
 
-        {/*
-         * FIX R3F EN MÓVIL — frameloop="demand" + gl.setPixelRatio limitado.
-         * frameloop="demand" evita RAF innecesario y el canvas negro al volver
-         * de background en iOS. pixelRatio limitado a 2 evita renders 3x en
-         * pantallas de alta densidad (iPhone 15 Pro tiene dpr=3).
-         */}
         <Canvas
           camera={{ position: [0, 0, 1.8], fov: 55 }}
           style={{ background: "transparent" }}
@@ -702,7 +655,7 @@ export default function ChatBotUI() {
           <directionalLight position={[2, 4, 2]} intensity={1.8} />
           <pointLight position={[-2, 2, 2]} intensity={0.6} color="#7ecfff" />
           <Suspense fallback={null}>
-            <TaisonModel
+            <PixelModel
               isOpen={isOpen}
               isTypingRef={isTypingRef}
               onToggle={() => (isOpen ? handleClose() : setIsOpen(true))}
@@ -710,7 +663,6 @@ export default function ChatBotUI() {
           </Suspense>
         </Canvas>
       </div>
-
     </div>
   );
 }
