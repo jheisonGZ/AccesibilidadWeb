@@ -459,6 +459,8 @@ function ChatPanel({ emotion, onClose, panelRef, onTyping }) {
       const reply = data.content?.[0]?.text || "Lo siento, no pude responder ahora.";
       setHistory((h) => [...h, { role: "assistant", content: reply }]);
       setMessages((m) => [...m, { role: "assistant", text: reply }]);
+
+      
     } catch {
       setMessages((m) => [...m, { role: "assistant", text: "Estoy teniendo problemas de conexion. Asegurate de que el backend este corriendo." }]);
     }

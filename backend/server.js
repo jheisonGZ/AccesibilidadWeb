@@ -84,9 +84,8 @@ app.get('/health', (req, res) => {
 app.post('/api/chat', async (req, res) => {
   try {
 
-    /* -----------------------------------------
-       BODY VALIDATION
-       ----------------------------------------- */
+    console.log('BODY RECIBIDO:', req.body);
+    console.log('Groq API:', !!process.env.GROQ_API_KEY);
 
     const {
       messages = [],
