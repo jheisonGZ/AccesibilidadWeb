@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "chart.js": "^4.5.1",
-    "howler": "^2.2.4"
+    "chart.js": "^4.5.1"
   }
 }
