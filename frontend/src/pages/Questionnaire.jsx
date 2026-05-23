@@ -21,42 +21,36 @@ const QUESTIONS = [
     icon: Wind,
     dimension: "ansiedad"
   },
-
   {
     id: "q2",
     text: "He sentido que mis preocupaciones ocupan gran parte de mis pensamientos.",
     icon: Brain,
     dimension: "ansiedad"
   },
-
   {
     id: "q3",
     text: "He tenido momentos de tristeza, desánimo o poca motivación emocional.",
     icon: Frown,
     dimension: "ansiedad"
   },
-
   {
     id: "q4",
     text: "He tenido dificultades para concentrarme o mantenerme enfocado/a en mis actividades académicas.",
     icon: BookOpen,
     dimension: "estres"
   },
-
   {
     id: "q5",
     text: "He sentido cansancio físico o mental incluso después de descansar.",
     icon: BatteryLow,
     dimension: "estres"
   },
-
   {
     id: "q6",
     text: "He notado reacciones físicas como tensión, palpitaciones o dificultad para relajarme en momentos de estrés.",
     icon: Zap,
     dimension: "ansiedad"
   },
-
   {
     id: "q7",
     text: "He tenido dudas sobre mis capacidades o preocupación por mi futuro académico y personal.",
@@ -66,29 +60,10 @@ const QUESTIONS = [
 ];
 
 const OPTIONS = [
-  {
-    value: 0,
-    label: "Nunca",
-    sublabel: "Todo tranquilo"
-  },
-
-  {
-    value: 1,
-    label: "Algunos días",
-    sublabel: "Pasó ocasionalmente"
-  },
-
-  {
-    value: 2,
-    label: "Frecuente",
-    sublabel: "Me ocurrió seguido"
-  },
-
-  {
-    value: 3,
-    label: "Muy frecuente",
-    sublabel: "Me afectó casi diario"
-  },
+  { value: 0, label: "Nunca",        sublabel: "Todo tranquilo" },
+  { value: 1, label: "Algunos días", sublabel: "Pasó ocasionalmente" },
+  { value: 2, label: "Frecuente",    sublabel: "Me ocurrió seguido" },
+  { value: 3, label: "Muy frecuente",sublabel: "Me afectó casi diario" },
 ];
 
 const STEP_COLORS = [
@@ -146,7 +121,7 @@ export default function Questionnaire() {
   const [answers,       setAnswers]       = useState(Array(QUESTIONS.length).fill(null));
   const [saving,        setSaving]        = useState(false);
   const [done,          setDone]          = useState(false);
-  const [accordionOpen, setAccordionOpen] = useState(false); // FIX: acordeón colapsado por defecto
+  const [accordionOpen, setAccordionOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("q_done", done ? "1" : "0");
@@ -161,23 +136,25 @@ export default function Questionnaire() {
   const Icon        = current?.icon;
   const accentColor = STEP_COLORS[step] ?? STEP_COLORS[0];
 
+  // ✅ CORREGIDO: solo selecciona la respuesta, NO avanza automáticamente
   const handleSelect = (value) => {
-    const next = [...answers]; next[step] = value; setAnswers(next);
+    const next = [...answers];
+    next[step] = value;
+    setAnswers(next);
     playSound("select");
     if (navigator.vibrate) navigator.vibrate(40);
-    setTimeout(() => {
+  };
+
+  // ✅ Avance manual al presionar "Siguiente" o "Finalizar"
+  const handleNext = () => {
     if (step < QUESTIONS.length - 1) {
       playSound("advance");
-
-    if (navigator.vibrate) {
-        navigator.vibrate([30, 30, 30]);
-      }
-
+      if (navigator.vibrate) navigator.vibrate([30, 30, 30]);
       setStep(s => s + 1);
     } else {
-      playSound("select");
+      playSound("finish");
+      setDone(true);
     }
-    }, 320);
   };
 
   const handleBack = () => {
@@ -264,7 +241,7 @@ export default function Questionnaire() {
               <h2 className="q-result-title" style={{ color }}>{label}</h2>
               <p className="q-result-desc">{desc}</p>
               <p className="q-result-note">
-               Tus respuestas reflejan un momento emocional actual, no definen quién eres.
+                Tus respuestas reflejan un momento emocional actual, no definen quién eres.
               </p>
             </div>
           </div>
@@ -345,7 +322,7 @@ export default function Questionnaire() {
             </div>
           </div>
 
-          {/* ── 5. Acciones — z-index 9999 para estar encima del chatbot ── */}
+          {/* ── 5. Acciones ── */}
           <div className="q-result-actions">
             <button className="q-btn-back" onClick={handleBack}>
               <ArrowLeft size={16} /> Revisar
@@ -361,16 +338,20 @@ export default function Questionnaire() {
   }
 
   /* ══ PANTALLA PREGUNTA ══ */
+  // ✅ CORREGIDO: guard evita crash si current es undefined
+  if (!current) return null;
+
   return (
     <div className="q-page" style={{ "--q-accent": accentColor }}>
       <div className="q-container">
 
         <div className="q-top">
           <p className="q-intro-text">
-           Este espacio fue creado para ayudarte a reconocer cómo te has sentido emocionalmente en los últimos días. No existen respuestas correctas o incorrectas.
-           </p>
+            Este espacio fue creado para ayudarte a reconocer cómo te has sentido emocionalmente en los últimos días. No existen respuestas correctas o incorrectas.
+          </p>
           <div className="q-step-label">
-            Bienestar emocional • <b>{step + 1}</b> de {QUESTIONS.length}</div>
+            Bienestar emocional • <b>{step + 1}</b> de {QUESTIONS.length}
+          </div>
           <div className="q-progress-bar">
             <div className="q-progress-fill" style={{ width: `${progress}%` }} />
           </div>
@@ -413,28 +394,17 @@ export default function Questionnaire() {
           <button className="q-btn-back" onClick={handleBack} disabled={step === 0}>
             <ArrowLeft size={16} /> Anterior
           </button>
+
+          {/* ✅ Botón Siguiente / Finalizar — solo aparece si hay respuesta seleccionada */}
           {answers[step] !== null && (
-  <button
-    className="q-btn-next"
-    onClick={() => {
-      if (step < QUESTIONS.length - 1) {
-        setStep(s => s + 1);
-      } else {
-        setDone(true);
-      }
-    }}
-  >
-    {step < QUESTIONS.length - 1 ? (
-      <>
-        Siguiente <ArrowRight size={16} />
-      </>
-    ) : (
-      <>
-        Finalizar <CheckCircle size={16} />
-      </>
-    )}
-  </button>
-)}
+            <button className="q-btn-next" onClick={handleNext}>
+              {step < QUESTIONS.length - 1 ? (
+                <>Siguiente <ArrowRight size={16} /></>
+              ) : (
+                <>Finalizar <CheckCircle size={16} /></>
+              )}
+            </button>
+          )}
         </div>
 
         <div className="q-dots">
