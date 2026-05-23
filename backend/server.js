@@ -1,7 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const Groq = require('groq-sdk');
-require('dotenv').config();
+
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 const app = express();
 
@@ -45,9 +48,6 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// ── Freesound proxy ──────────────────────────────────────────────────────────
-// Busca sonidos en Freesound y devuelve hasta 3 resultados con preview URLs.
-// El frontend nunca toca la API key — todo pasa por aquí.
 app.get('/api/sounds/search', async (req, res) => {
   try {
     const { query } = req.query;
@@ -56,8 +56,9 @@ app.get('/api/sounds/search', async (req, res) => {
       return res.status(400).json({ error: 'Falta el parámetro query' });
     }
 
-    if (!process.env.FREESOUND_API_KEY) {
-      return res.status(500).json({ error: 'FREESOUND_API_KEY no configurada en .env' });
+    const apiKey = process.env.FREESOUND_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'FREESOUND_API_KEY no configurada' });
     }
 
     const url =
@@ -66,14 +67,14 @@ app.get('/api/sounds/search', async (req, res) => {
       `&fields=id,name,previews,duration` +
       `&filter=duration:[0.5 TO 5]` +
       `&page_size=3` +
-      `&token=${process.env.FREESOUND_API_KEY}`;
+      `&token=${apiKey}`;
 
     const r = await fetch(url);
 
     if (!r.ok) {
       const body = await r.text();
       console.error('Freesound error:', r.status, body);
-      return res.status(r.status).json({ error: `Freesound respondió ${r.status}` });
+      return res.status(r.status).json({ error: `Freesound respondio ${r.status}` });
     }
 
     const data = await r.json();
@@ -84,26 +85,24 @@ app.get('/api/sounds/search', async (req, res) => {
   }
 });
 
-// ── Freesound preview por ID ─────────────────────────────────────────────────
-// Devuelve la preview URL de un sonido específico dado su ID.
-// Útil para reconstruir la URL si solo guardaste el ID en Firestore.
 app.get('/api/sounds/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!process.env.FREESOUND_API_KEY) {
-      return res.status(500).json({ error: 'FREESOUND_API_KEY no configurada en .env' });
+    const apiKey = process.env.FREESOUND_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'FREESOUND_API_KEY no configurada' });
     }
 
     const url =
       `https://freesound.org/apiv2/sounds/${id}/` +
       `?fields=id,name,previews,duration` +
-      `&token=${process.env.FREESOUND_API_KEY}`;
+      `&token=${apiKey}`;
 
     const r = await fetch(url);
 
     if (!r.ok) {
-      return res.status(r.status).json({ error: `Freesound respondió ${r.status}` });
+      return res.status(r.status).json({ error: `Freesound respondio ${r.status}` });
     }
 
     const data = await r.json();
