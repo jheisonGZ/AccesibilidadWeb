@@ -225,19 +225,16 @@ const MobileContent = () => (
 // Componente principal
 // -----------------------------------------------------------------------------
 const HelpModal = ({ isOpen, onClose }) => {
-  const hasPlayed = useRef(false);
+ const hasPlayed = useRef(false);
   const isMobile  = useIsMobile(768); // true si ancho < 768px
 
-  // Sonido de apertura — solo la primera vez que se abre
+  // Precarga imágenes al montar — así el modal abre instantáneo
   useEffect(() => {
-    if (isOpen && !hasPlayed.current) {
-      soundOpen();
-      hasPlayed.current = true;
-    }
-    if (!isOpen) {
-      hasPlayed.current = false;
-    }
-  }, [isOpen]);
+    [helpControlsImageDesktop, helpControlsImageMobile].forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
 
   if (!isOpen) return null;
 
