@@ -10,6 +10,10 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { gsap } from "gsap";
 import { useLocation } from "react-router-dom";
+import {
+  House, ClipboardList, Award, UserRound,
+  TrendingUp, Smile, TriangleAlert, HeartPulse,
+} from "lucide-react";
 import "../styles/chatbot.css";
 
 const PIXEL_MODEL = "/models/pixel.glb";
@@ -85,7 +89,7 @@ const EMO_COLORS = {
   ansiedad:      "#ff4466",
   questionnaire: "#a78bfa",
   resultado:     "#00eaff",
-  avatar:        "#ff6b6b",
+  avatar:        "#a00f80",
   progreso:      "#ffd500",
 };
 
@@ -100,72 +104,186 @@ const PATRONES_PROHIBIDOS = [
 const esTemaFueraDeScope = (texto) =>
   PATRONES_PROHIBIDOS.some((p) => p.test(texto));
 
+// ─── BUBBLE_CONFIG ────────────────────────────────────────────────────────────
 const BUBBLE_CONFIG = {
   neutro: {
     color: "#00eaff", shadow: "rgba(0,234,255,0.75)",
-    icon: <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01"/><path d="M9.5 15a3.5 3.5 0 0 0 5 0"/></svg>,
+    gradient: "radial-gradient(circle at 35% 35%, #40f4ff, #00b8cc)",
+    inset:    "0 2px 0 0 rgba(255,255,255,0.45) inset, 0 -2px 0 0 rgba(0,0,0,0.25) inset",
+    orbColor: "#40f4ff",
+    icon: <House         size={14} stroke="rgba(255,255,255,0.95)" strokeWidth={2.2} />,
   },
   leve: {
     color: "#00ff88", shadow: "rgba(0,255,136,0.75)",
-    icon: <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01"/><path d="M14 9l2 2-2 2"/><path d="M9.5 15a3.5 3.5 0 0 0 5 0"/></svg>,
+    gradient: "radial-gradient(circle at 35% 35%, #66ffb2, #00cc66)",
+    inset:    "0 2px 0 0 rgba(255,255,255,0.45) inset, 0 -2px 0 0 rgba(0,0,0,0.25) inset",
+    orbColor: "#66ffb2",
+    icon: <Smile         size={14} stroke="rgba(255,255,255,0.95)" strokeWidth={2.2} />,
   },
   estres: {
     color: "#ffcc00", shadow: "rgba(255,204,0,0.75)",
-    icon: <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 12c0-3 2.5-6 2.5-6s-5 2-5 6a4.5 4.5 0 0 0 9 0c0-2-1-3.5-2-4.5 0 1.5-4.5 4.5-4.5 4.5z"/></svg>,
+    gradient: "radial-gradient(circle at 35% 35%, #ffe566, #c9a800)",
+    inset:    "0 2px 0 0 rgba(255,255,255,0.45) inset, 0 -2px 0 0 rgba(0,0,0,0.25) inset",
+    orbColor: "#ffe566",
+    icon: <TriangleAlert size={14} stroke="rgba(255,255,255,0.95)" strokeWidth={2.2} />,
   },
   ansiedad: {
     color: "#ff4466", shadow: "rgba(255,68,102,0.75)",
-    icon: <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h3l2-5 4 10 2-5h7"/></svg>,
+    gradient: "radial-gradient(circle at 35% 35%, #ff8099, #cc0033)",
+    inset:    "0 2px 0 0 rgba(255,255,255,0.45) inset, 0 -2px 0 0 rgba(0,0,0,0.25) inset",
+    orbColor: "#ff8099",
+    icon: <HeartPulse    size={14} stroke="rgba(255,255,255,0.95)" strokeWidth={2.2} />,
   },
   questionnaire: {
     color: "#a78bfa", shadow: "rgba(167,139,250,0.75)",
-    icon: <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>,
+    gradient: "radial-gradient(circle at 35% 35%, #c4b0ff, #7c5ce8)",
+    inset:    "0 2px 0 0 rgba(255,255,255,0.45) inset, 0 -2px 0 0 rgba(0,0,0,0.25) inset",
+    orbColor: "#c4b0ff",
+    icon: <ClipboardList size={14} stroke="rgba(255,255,255,0.95)" strokeWidth={2.2} />,
   },
   resultado: {
     color: "#00eaff", shadow: "rgba(0,234,255,0.75)",
-    icon: <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="9" r="5"/><path d="M8.5 14.5L7 21l5-2 5 2-1.5-6.5"/></svg>,
+    gradient: "radial-gradient(circle at 35% 35%, #40f4ff, #00b8cc)",
+    inset:    "0 2px 0 0 rgba(255,255,255,0.45) inset, 0 -2px 0 0 rgba(0,0,0,0.25) inset",
+    orbColor: "#40f4ff",
+    icon: <Award         size={14} stroke="rgba(255,255,255,0.95)" strokeWidth={2.2} />,
   },
   avatar: {
     color: "#ff6b6b", shadow: "rgba(255,107,107,0.75)",
-    icon: <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="8" r="4"/><path d="M2 20c0-4 3.6-7 8-7"/><path d="M18 14l1.5 3 3.5.5-2.5 2.5.5 3.5L18 22l-3 1.5.5-3.5L13 17.5l3.5-.5z"/></svg>,
+    gradient: "radial-gradient(circle at 35% 35%, #ff9999, #e03a3a)",
+    inset:    "0 2px 0 0 rgba(255,255,255,0.45) inset, 0 -2px 0 0 rgba(0,0,0,0.25) inset",
+    orbColor: "#ff9999",
+    icon: <UserRound     size={14} stroke="rgba(255,255,255,0.95)" strokeWidth={2.2} />,
   },
   progreso: {
     color: "#ffd500", shadow: "rgba(255,213,0,0.75)",
-    icon: <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l4-8 4 4 3-6 4 5"/><path d="M3 21h18"/></svg>,
+    gradient: "radial-gradient(circle at 35% 35%, #ffe566, #c9a800)",
+    inset:    "0 2px 0 0 rgba(255,255,255,0.45) inset, 0 -2px 0 0 rgba(0,0,0,0.25) inset",
+    orbColor: "#ffe566",
+    icon: <TrendingUp    size={14} stroke="rgba(255,255,255,0.95)" strokeWidth={2.2} />,
   },
 };
 
+// CSS de animaciones — sin rotación, solo fade+scale suave
+const BUBBLE_STYLES = `
+  @keyframes pb-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+  @keyframes pb-ring  { 0%{transform:scale(.85);opacity:0} 55%{opacity:.55} 100%{transform:scale(1.6);opacity:0} }
+  @keyframes pb-fadeOut { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(.6)} }
+  @keyframes pb-fadeIn  { from{opacity:0;transform:scale(.6)} to{opacity:1;transform:scale(1)} }
+
+  .pb-float { animation: pb-float 2.4s ease-in-out infinite; }
+  .pb-ring  { position:absolute; inset:-5px; border-radius:50%;
+              border:1.5px solid currentColor; opacity:0;
+              animation: pb-ring 2.6s ease-out infinite; pointer-events:none; }
+  .pb-icon  { position:relative; z-index:2; display:flex; align-items:center; justify-content:center; }
+  .pb-icon.fade-out { animation: pb-fadeOut .2s ease-in forwards; }
+  .pb-icon.fade-in  { animation: pb-fadeIn  .2s ease-out forwards; }
+`;
+
+const SWAP_INTERVAL = 2800;
+
+// ─── ContextBubble ────────────────────────────────────────────────────────────
+//
+// LÓGICA DE SWAP (corregida):
+//
+// isDashboard = routeKey === "neutro"
+//
+// Caso A — Dashboard con emoción guardada (ej: ansiedad):
+//   isDashboard=true, emotion="ansiedad"
+//   → states = [ BUBBLE_CONFIG["ansiedad"] ]   ← solo emoción, SIN House
+//   → sin swap, la burbuja muestra la emoción del usuario
+//
+// Caso B — Ruta especial (questionnaire / avatar / progreso):
+//   isDashboard=false, effectiveEmotion = routeKey (ej: "avatar")
+//   → states = [ BUBBLE_CONFIG["avatar"] ]     ← solo icono de sección
+//   → sin swap
+//
+// Caso C — Ruta especial Y hay emoción guardada diferente:
+//   isDashboard=false, routeKey="avatar", emotion="ansiedad"
+//   effectiveEmotion se fuerza a "avatar" en ChatBotUI, así que
+//   la burbuja muestra el icono de la sección (avatar). Correcto.
+//
+// Resultado: nunca se mezclan dashboard+sección ni emoción+sección.
+// La burbuja siempre tiene un único estado claro y sin swap innecesario.
+//
 function ContextBubble({ visible, emotion }) {
-  const ref = useRef();
+  // emotion ya viene resuelto desde ChatBotUI como effectiveEmotion
   const cfg = BUBBLE_CONFIG[emotion] || BUBBLE_CONFIG.neutro;
 
+  const wrapRef  = useRef();
+
+  const ringRef  = useRef();
+  const iconRef  = useRef();
+
+  // activeIdx y prevIdx controlan qué icono se muestra
+  // Solo se usan cuando hay swap (actualmente deshabilitado — ver nota abajo)
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  // Ref para el estilo de la burbuja (evita re-render en cada tick del orb)
+  const bubbleRef = useRef();
+
+  // Aplica estilos de color al shell de la burbuja
   useEffect(() => {
-    if (!ref.current) return;
+    if (!bubbleRef.current) return;
+    bubbleRef.current.style.background  = cfg.gradient;
+    bubbleRef.current.style.boxShadow   = `${cfg.inset}, 0 5px 16px ${cfg.shadow}, 0 2px 4px rgba(0,0,0,0.35)`;
+    if (ringRef.current) ringRef.current.style.color = cfg.color;
+  }, [cfg]);
+
+  // GSAP entrada/salida
+  useEffect(() => {
+    if (!wrapRef.current) return;
     if (visible) {
-      gsap.killTweensOf(ref.current);
-      gsap.fromTo(ref.current,
+      gsap.killTweensOf(wrapRef.current);
+      gsap.fromTo(wrapRef.current,
         { opacity: 0, scale: 0.4, y: 10 },
         { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "back.out(2)" }
       );
-      gsap.to(ref.current, { y: -6, duration: 0.9, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 0.5 });
     } else {
-      gsap.killTweensOf(ref.current);
-      gsap.to(ref.current, { opacity: 0, scale: 0.4, y: 10, duration: 0.3, ease: "power2.in" });
+      gsap.killTweensOf(wrapRef.current);
+      gsap.to(wrapRef.current, { opacity: 0, scale: 0.4, y: 10, duration: 0.3, ease: "power2.in" });
     }
   }, [visible]);
 
+  // Cuando cambia la emoción/ruta, anima el icono con fade suave
+  const prevEmotionRef = useRef(emotion);
+  useEffect(() => {
+    if (prevEmotionRef.current === emotion) return;
+    prevEmotionRef.current = emotion;
+    if (!iconRef.current) return;
+
+    iconRef.current.classList.remove("fade-in");
+    iconRef.current.classList.add("fade-out");
+    setTimeout(() => {
+      if (!iconRef.current) return;
+      iconRef.current.classList.remove("fade-out");
+      iconRef.current.classList.add("fade-in");
+      setTimeout(() => iconRef.current?.classList.remove("fade-in"), 200);
+    }, 200);
+  }, [emotion]);
+
   return (
-    <div ref={ref} style={{
-      position: "absolute", top: "-18px", left: "50%", transform: "translateX(-50%)",
-      width: "28px", height: "28px", borderRadius: "50%",
-      background: cfg.color,
-      boxShadow: `0 0 12px ${cfg.shadow}, 0 2px 8px rgba(0,0,0,0.4)`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      opacity: 0, pointerEvents: "none", zIndex: 10, userSelect: "none",
-      transition: "background 0.4s ease, box-shadow 0.4s ease",
-    }}>
-      {cfg.icon}
-    </div>
+    <>
+      <style>{BUBBLE_STYLES}</style>
+      <div ref={wrapRef} style={{
+        position: "absolute", top: "-18px", left: "50%", transform: "translateX(-50%)",
+        opacity: 0, pointerEvents: "none", zIndex: 10, userSelect: "none",
+      }}>
+        <div className="pb-float">
+          <div ref={bubbleRef} style={{
+            position: "relative",
+            width: "28px", height: "28px", borderRadius: "50%",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "background 0.5s ease, box-shadow 0.5s ease",
+          }}>
+            <div ref={ringRef} className="pb-ring" />
+            <div ref={iconRef} className="pb-icon">
+              {cfg.icon}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -425,7 +543,9 @@ export default function ChatBotUI() {
   const isInAvatar        = location.pathname.includes("avatar")        || location.pathname.includes("personaje");
   const isInProgress      = location.pathname.includes("progress")      || location.pathname.includes("progreso");
 
-  // Cierre y reset automático al cambiar de ruta
+  // Ruta especial = cualquier página que NO sea dashboard
+  const isInSpecialRoute = isInQuestionnaire || isInAvatar || isInProgress;
+
   useEffect(() => {
     const prev = prevPathRef.current;
     const curr = location.pathname;
@@ -444,11 +564,16 @@ export default function ChatBotUI() {
     return () => clearInterval(interval);
   }, [isInQuestionnaire]);
 
+  // ─── effectiveEmotion: qué se pasa a la burbuja ───────────────────────────
+  // Regla:
+  //   - Ruta especial  → usa el icono/color DE LA SECCIÓN (questionnaire, avatar, progreso, resultado)
+  //   - Dashboard      → usa la emoción del usuario guardada en Firebase (ansiedad, leve, etc.)
+  //   - Sin emoción    → "neutro" (House)
   const effectiveEmotion = isInQuestionnaire
     ? (qDone ? "resultado" : "questionnaire")
-    : isInAvatar  ? "avatar"
+    : isInAvatar   ? "avatar"
     : isInProgress ? "progreso"
-    : emotion;
+    : (emotion || "neutro");
 
   useEffect(() => {
     if (!user) return;
@@ -476,7 +601,7 @@ export default function ChatBotUI() {
     gsap.to(tooltipRef.current, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", delay: 0.3 });
   }, [isOpen]);
 
-  const openPanel = useCallback(() => setIsOpen(true), []);
+  const openPanel  = useCallback(() => setIsOpen(true), []);
 
   const handleClose = useCallback(() => {
     if (!panelRef.current) { setIsOpen(false); setChatKey((k) => k + 1); return; }
@@ -499,7 +624,7 @@ export default function ChatBotUI() {
     if (isOpen) handleClose(); else openPanel();
   }, [isOpen, handleClose, openPanel]);
 
-  const bubbleVisible = !isOpen && (isInQuestionnaire || isInAvatar || isInProgress || !!effectiveEmotion);
+  const bubbleVisible = !isOpen && (isInSpecialRoute || !!emotion);
 
   return (
     <div className="chatbot-wrapper">
@@ -515,12 +640,15 @@ export default function ChatBotUI() {
 
       {!isOpen && showWelcome && !isInQuestionnaire && !isInAvatar && (
         <div ref={tooltipRef} className="chatbot-tooltip" style={{ opacity: 0 }} onClick={openPanel}>
-          {effectiveEmotion ? "Woof! En que puedo ayudarte?" : "Haz el cuestionario primero"}
+          {emotion ? "Woof! En que puedo ayudarte?" : "Haz el cuestionario primero"}
         </div>
       )}
 
       <div className="chatbot-canvas" style={{ position: "relative" }}>
-        <ContextBubble visible={bubbleVisible} emotion={effectiveEmotion || "neutro"} />
+        <ContextBubble
+          visible={bubbleVisible}
+          emotion={effectiveEmotion}
+        />
         <Canvas
           camera={{ position: [0, 0, 1.8], fov: 55 }}
           style={{ background: "transparent" }}
