@@ -4,6 +4,7 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { useAuth } from "../providers/AuthProvider";
 import { auth } from "../services/firebase";
 import Swal from "sweetalert2";
+import { User, Mail, Lock } from "lucide-react";
 import "../styles/register.css";
 
 export default function Register() {
@@ -20,20 +21,15 @@ export default function Register() {
     setError("");
 
     try {
-      // 1. Crea el usuario
       const { user } = await createUserWithEmailAndPassword(
         auth,
         email.trim(),
         password
       );
 
-      // 2. Guarda el nombre
       await updateProfile(user, { displayName: name.trim() });
-
-      // 3. Recarga el contexto
       await refreshUser();
 
-      // 4. Mensaje de éxito — tono rosadito
       await Swal.fire({
         icon: "success",
         title: "¡Cuenta creada!",
@@ -59,32 +55,41 @@ export default function Register() {
 
         <form className="register-form" onSubmit={onSubmit}>
 
-          <input
-            className="register-input"
-            type="text"
-            placeholder="Nombre"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
+          <div className="register-input-box">
+            <User size={18} className="register-input-icon" />
+            <input
+              className="register-input"
+              type="text"
+              placeholder="Nombre"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
 
-          <input
-            className="register-input"
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+          <div className="register-input-box">
+            <Mail size={18} className="register-input-icon" />
+            <input
+              className="register-input"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-          <input
-            className="register-input"
-            type="password"
-            placeholder="Contraseña (6+)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="register-input-box">
+            <Lock size={18} className="register-input-icon" />
+            <input
+              className="register-input"
+              type="password"
+              placeholder="Contraseña (6+)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
           {error && <div className="register-error">{error}</div>}
 

@@ -101,11 +101,21 @@ body {
 
 .input-box {
   margin: 12px 0;
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.75);
+  pointer-events: none;
 }
 
 .input-box input {
   width: 100%;
-  padding: 12px;
+  padding: 12px 12px 12px 40px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   outline: none;
@@ -140,13 +150,40 @@ body {
   font-weight: 600;
 }
 
+.btn-login {
+  background: #6b7c3a;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+  transition: background 0.2s ease;
+}
+
+.btn-login:hover:not(:disabled) {
+  background: #525f23;
+}
+
 .btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
 .btn-google {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-google:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.google-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .login-error {
@@ -154,6 +191,8 @@ body {
   margin-top: 10px;
   font-size: 14px;
 }
+
+
 
 /* ===== REGISTER LINK ===== */
 
@@ -222,7 +261,7 @@ body {
   }
 
   .input-box input {
-    padding: 11px 12px;
+    padding: 11px 12px 11px 40px;
     font-size: max(16px, 14px);
   }
 

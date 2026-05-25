@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../services/firebase";
 import Swal from "sweetalert2";
+import { Mail } from "lucide-react";
 import "../styles/ResetPassword.css";
 
 export default function ResetPassword() {
@@ -14,7 +15,6 @@ export default function ResetPassword() {
     try {
       await sendPasswordResetEmail(auth, email.trim());
 
-      // ✅ Éxito — tono azulito
       await Swal.fire({
         icon: "info",
         title: "¡Correo enviado!",
@@ -27,7 +27,6 @@ export default function ResetPassword() {
       });
 
     } catch {
-      // ❌ Error
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -44,24 +43,28 @@ export default function ResetPassword() {
         <h1 className="reset-title">Recuperar contraseña</h1>
 
         <form className="reset-form" onSubmit={onSubmit}>
-          <input
-            className="reset-input"
-            type="email"
-            placeholder="Correo"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+          <div className="reset-input-box">
+            <Mail size={18} className="reset-input-icon" />
+            <input
+              className="reset-input"
+              type="email"
+              placeholder="Correo"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
           <button className="reset-button">
             Enviar enlace
           </button>
 
           <p className="reset-footer">
-            <Link className="reset-link" to="/">
-              Volver al login
-            </Link>
-          </p>
+          Volver al{" "}
+          <Link className="reset-link" to="/">
+            login
+          </Link>
+        </p>
         </form>
       </div>
     </div>
