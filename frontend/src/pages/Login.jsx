@@ -138,13 +138,10 @@ export default function Login() {
           <button className="btn btn-google" type="button" onClick={handleGoogle} disabled={busy}>
             Iniciar sesión con Google
           </button>
-          <div className="register-link">
-            <p>
-              ¿No tienes una cuenta?{" "}
-              <Link to="/register">Regístrate ahora</Link>
-            </p>
+          <div className="login-register-link">
+            <span className="login-register-text">¿No tienes una cuenta?</span>
+            <Link to="/register" className="login-register-btn">Regístrate ahora</Link>
           </div>
-          {user && <p className="login-mini">Sesión: {user.email}</p>}
         </form>
       </div>
     </div>
