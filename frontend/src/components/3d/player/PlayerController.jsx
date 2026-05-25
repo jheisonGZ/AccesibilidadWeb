@@ -30,6 +30,14 @@ export default function PlayerController({
     "/models/animations/caminar.glb"
   );
 
+  const runAnimation = useGLTF(
+    "/models/animations/correr.glb"
+  );
+
+  const jumpAnimation = useGLTF(
+    "/models/animations/saltar.glb"
+  );
+
   // ACTIONS
   const idle = useAnimations(
     idleAnimation.animations,
@@ -38,6 +46,16 @@ export default function PlayerController({
 
   const walk = useAnimations(
     walkAnimation.animations,
+    group
+  );
+
+  const run = useAnimations(
+    runAnimation.animations,
+    group
+  );
+
+  const jump = useAnimations(
+    jumpAnimation.animations,
     group
   );
 
@@ -88,7 +106,7 @@ export default function PlayerController({
     const speed = 0.05;
 
     let moving = false;
-    
+
     // JOYSTICK MOBILE
     const move = controls?.current?.move;
 
@@ -99,120 +117,148 @@ export default function PlayerController({
     const walkAction =
       Object.values(walk.actions || {})[0];
 
+    const runAction =
+      Object.values(run.actions || {})[0];
+
+    const jumpAction =
+      Object.values(jump.actions || {})[0];
+
+    const isRunning = keys.current["shift"];
+
     // W
     if (keys.current["w"]) {
-
-      group.current.position.z -= speed;
-
+      group.current.position.z -= isRunning ? speed * 2 : speed;
       group.current.rotation.y = 0;
-
       moving = true;
     }
 
     // S
     if (keys.current["s"]) {
-
-      group.current.position.z += speed;
-
+      group.current.position.z += isRunning ? speed * 2 : speed;
       group.current.rotation.y = Math.PI;
-
       moving = true;
     }
 
     // A
     if (keys.current["a"]) {
-
-      group.current.position.x -= speed;
-
+      group.current.position.x -= isRunning ? speed * 2 : speed;
       group.current.rotation.y = Math.PI / 2;
-
       moving = true;
     }
 
     // D
     if (keys.current["d"]) {
-
-      group.current.position.x += speed;
-
+      group.current.position.x += isRunning ? speed * 2 : speed;
       group.current.rotation.y = -Math.PI / 2;
-
       moving = true;
     }
 
-    // MOBILE JOYSTICK
-// MOBILE JOYSTICK
-if (
-  move &&
-  (
-    Math.abs(move.x) > 0.1 ||
-    Math.abs(move.y) > 0.1
-  )
-) {
+    // LÍMITES DEL MAPA
+    const limit = 4.5;
+    group.current.position.x = Math.max(
+      -limit,
+      Math.min(limit, group.current.position.x)
+    );
+    group.current.position.z = Math.max(
+      -limit,
+      Math.min(limit, group.current.position.z)
+    );
 
-  group.current.position.x +=
-    move.x * speed;
+    // SALTAR
+    if (keys.current[" "]) {
 
-  group.current.position.z +=
-    move.y * speed;
+      keys.current[" "] = false;
 
-  moving = true;
+      if (currentAnimation.current !== "jump") {
 
-  // ROTACIÓN
-  if (Math.abs(move.x) > Math.abs(move.y)) {
+        currentAnimation.current = "jump";
 
-    if (move.x > 0) {
-      group.current.rotation.y =
-        -Math.PI / 2;
-    } else {
-      group.current.rotation.y =
-        Math.PI / 2;
+        idleAction?.fadeOut(0.1);
+        walkAction?.fadeOut(0.1);
+        runAction?.fadeOut(0.1);
+
+        jumpAction
+          ?.reset()
+          .setEffectiveTimeScale(1.8)
+          .fadeIn(0.1)
+          .play();
+
+        jumpAction.clampWhenFinished = true;
+
+        jumpAction._mixer.addEventListener(
+          "finished",
+          function onFinished() {
+            currentAnimation.current = "idle";
+            jumpAction?.fadeOut(0.1);
+            idleAction?.reset().fadeIn(0.1).play();
+            jumpAction._mixer.removeEventListener("finished", onFinished);
+          }
+        );
+      }
     }
 
-  } else {
-
-    if (move.y > 0) {
-      group.current.rotation.y =
-        Math.PI;
-    } else {
-      group.current.rotation.y = 0;
-    }
-  }
-}
-    
     // CAMBIO DE ESTADO
-if (moving !== movingRef.current) {
+    else if (
+      moving !== movingRef.current ||
+      (moving && isRunning !== (currentAnimation.current === "run"))
+    ) {
 
-  movingRef.current = moving;
+      movingRef.current = moving;
 
-  // CAMINAR
-  if (moving && currentAnimation.current !== "walk") {
+      // CORRER
+      if (moving && isRunning && currentAnimation.current !== "run") {
 
-    currentAnimation.current = "walk";
+        currentAnimation.current = "run";
 
-    idleAction?.fadeOut(0.2);
+        idleAction?.fadeOut(0.15);
+        walkAction?.fadeOut(0.15);
 
-    walkAction
-      ?.reset()
-      .fadeIn(0.2)
-      .play();
-  }
+        if (!runAction?.isRunning()) {
+          runAction
+            ?.reset()
+            .fadeIn(0.15)
+            .play();
+        } else {
+          runAction?.fadeIn(0.15);
+        }
+      }
 
-  // IDLE
-  else if (
-    !moving &&
-    currentAnimation.current !== "idle"
-  ) {
+      // CAMINAR
+      else if (moving && !isRunning && currentAnimation.current !== "walk") {
 
-    currentAnimation.current = "idle";
+        currentAnimation.current = "walk";
 
-    walkAction?.fadeOut(0.2);
+        idleAction?.fadeOut(0.15);
+        runAction?.fadeOut(0.15);
 
-    idleAction
-      ?.reset()
-      .fadeIn(0.2)
-      .play();
-  }
-}
+        if (!walkAction?.isRunning()) {
+          walkAction
+            ?.reset()
+            .fadeIn(0.15)
+            .play();
+        } else {
+          walkAction?.fadeIn(0.15);
+        }
+      }
+
+      // IDLE
+      else if (
+        !moving &&
+        currentAnimation.current !== "idle"
+      ) {
+
+        currentAnimation.current = "idle";
+
+        walkAction?.fadeOut(0.2);
+        runAction?.fadeOut(0.2);
+        jumpAction?.fadeOut(0.2);
+
+        idleAction
+          ?.reset()
+          .fadeIn(0.2)
+          .play();
+      }
+    }
 
     // FOLLOW CAMERA
     camera.position.x += (
