@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { doc, getDoc, collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
 import AnxietyRoom from "../scenes/AnxietyRoom";
-import StressRoom  from "../scenes/StressRoom";
+import BasicRoom from "../scenes/BasicRoom";
 import NeutralRoom from "../scenes/NeutralRoom";
 import { usePageReady } from "../providers/NavigationContext";
 import { useAuth } from "../providers/AuthProvider";
@@ -129,7 +129,7 @@ export default function Scene() {
 
   const SceneComponent =
     emotion === "ansiedad" ? AnxietyRoom :
-    emotion === "estres"   ? StressRoom  : NeutralRoom;
+    emotion === "estres"   ? BasicRoom  : NeutralRoom;
 
   const emo       = EMOTION_MAP[emotion] || EMOTION_MAP.neutro;
   const trend     = getTrend(lastScore);
