@@ -297,10 +297,45 @@
 }
 
 /* =============================================================================
-   LANDSCAPE MÓVIL
+   LANDSCAPE MÓVIL — corregido
 ============================================================================= */
 @media (max-width: 768px) and (orientation: landscape) {
-  .chatbot-panel  { height: min(320px, 80dvh); }
-  .chatbot-canvas { width: 90px; height: 90px; }
-  .chatbot-wrapper { bottom: 0; right: 12px; gap: 4px; }
+  .chatbot-wrapper {
+    bottom: -50px;        /* ← sube el perrito */
+    right: 4px;
+    gap: 4px;
+  }
+
+  .chatbot-canvas {
+    width: 85px;
+    height: 85px;
+  }
+
+  .chatbot-panel {
+    height: min(300px, 78dvh);
+    width: min(280px, 50vw);   /* ← no ocupa todo el ancho en landscape */
+    position: fixed;
+    right: 8px;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* iPhone SE y pantallas muy pequeñas en landscape */
+@media (max-width: 568px) and (orientation: landscape) {
+  .chatbot-wrapper {
+    bottom: -55px;
+    right: 2px;
+  }
+
+  .chatbot-canvas {
+    width: 75px;
+    height: 75px;
+  }
+
+  .chatbot-panel {
+    width: min(260px, 52vw);
+    height: min(260px, 75dvh);
+    right: 6px;
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  }
 }

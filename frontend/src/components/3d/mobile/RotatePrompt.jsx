@@ -27,41 +27,40 @@ const buildRotateSound = (ctx) => {
 const playDashboardSound = () => {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type = "sine";
-    o.frequency.setValueAtTime(528, ctx.currentTime);
-    o.frequency.setValueAtTime(396, ctx.currentTime + 0.12);
-    g.gain.setValueAtTime(0.12, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.28);
-    o.start(ctx.currentTime);
-    o.stop(ctx.currentTime + 0.30);
-    setTimeout(() => ctx.close(), 500);
+    // ✅ resume primero, luego reproduce
+    ctx.resume().then(() => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = "sine";
+      o.frequency.setValueAtTime(528, ctx.currentTime);
+      o.frequency.setValueAtTime(396, ctx.currentTime + 0.12);
+      g.gain.setValueAtTime(0.12, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.28);
+      o.start(ctx.currentTime);
+      o.stop(ctx.currentTime + 0.30);
+      setTimeout(() => ctx.close(), 500);
+    });
   } catch (_) {}
 };
 
 const RotatePrompt = () => {
-  const appNavigate  = useAppNavigate();
-  const soundPlayed  = useRef(false);
+  const appNavigate = useAppNavigate();
+  const soundPlayed = useRef(false);
 
   useEffect(() => {
-    // ✅ Espera el primer gesto del usuario para crear AudioContext
     const handleFirstGesture = () => {
       if (soundPlayed.current) return;
       soundPlayed.current = true;
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        // resume por si el navegador lo crea suspendido
         ctx.resume().then(() => buildRotateSound(ctx));
       } catch (_) {}
     };
-
-    window.addEventListener("touchstart", handleFirstGesture, { once: true });
+    window.addEventListener("touchstart",  handleFirstGesture, { once: true });
     window.addEventListener("pointerdown", handleFirstGesture, { once: true });
-
     return () => {
-      window.removeEventListener("touchstart", handleFirstGesture);
+      window.removeEventListener("touchstart",  handleFirstGesture);
       window.removeEventListener("pointerdown", handleFirstGesture);
     };
   }, []);
@@ -78,53 +77,62 @@ const RotatePrompt = () => {
       inset: 0,
       zIndex: 9999,
       display: "flex",
+      flexDirection: "column",
       alignItems: "center",
-      justifyContent: "center",
+      justifyContent: "flex-start",   // tarjeta arriba
+      paddingTop: "2.5rem",
       fontFamily: "'Sora', sans-serif",
       overflow: "hidden",
     }}>
 
-      {/* Fondo difuminado */}
-      <div style={{
-        position: "absolute",
-        inset: "-12px",
-        backgroundImage: "url('/images/mobile.webp')",
-        backgroundSize: "cover",
-        backgroundPosition: "center top",
-        filter: "blur(8px)",
-      }} />
+      {/* Imagen de fondo sin blur */}
+      <img
+        src="/images/mobile.webp"
+        alt=""
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          objectPosition: "center center",
+          zIndex: 0,
+        }}
+      />
 
+      {/* Overlay muy sutil */}
       <div style={{
         position: "absolute",
         inset: 0,
-        background: "rgba(8,16,30,0.32)",
+        background: "rgba(8,16,20,0.15)",
+        zIndex: 1,
       }} />
 
-      {/* Tarjeta cristal */}
+      {/* Tarjeta cristal — parte superior */}
       <div style={{
         position: "relative",
         zIndex: 10,
-        background: "rgba(255,255,255,0.11)",
-        backdropFilter: "blur(24px) saturate(1.8) brightness(1.1)",
-        WebkitBackdropFilter: "blur(24px) saturate(1.8) brightness(1.1)",
+        background: "rgba(255,255,255,0.13)",
+        backdropFilter: "blur(28px) saturate(1.8) brightness(1.1)",
+        WebkitBackdropFilter: "blur(28px) saturate(1.8) brightness(1.1)",
         border: "1px solid rgba(255,255,255,0.28)",
         borderTop: "1px solid rgba(255,255,255,0.50)",
         borderRadius: 24,
-        padding: "2.2rem 1.8rem",
+        padding: "1.6rem 1.6rem",
         textAlign: "center",
-        maxWidth: 280,
-        width: "82%",
+        maxWidth: 300,
+        width: "88%",
         boxShadow:
-          "0 20px 60px rgba(0,0,0,0.22), " +
-          "0 4px 16px rgba(0,0,0,0.12), " +
+          "0 20px 60px rgba(0,0,0,0.18), " +
+          "0 4px 16px rgba(0,0,0,0.10), " +
           "inset 0 1px 0 rgba(255,255,255,0.50)",
         animation: "cardFadeIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both",
       }}>
 
         {/* Ícono animado */}
         <div style={{
-          width: 64, height: 64,
-          margin: "0 auto 1.2rem",
+          width: 56, height: 56,
+          margin: "0 auto 1rem",
           borderRadius: "50%",
           background: "rgba(255,255,255,0.13)",
           border: "1px solid rgba(255,255,255,0.30)",
@@ -134,24 +142,24 @@ const RotatePrompt = () => {
           justifyContent: "center",
           animation: "phoneRotate 3.2s ease-in-out infinite",
         }}>
-          <Smartphone size={28} color="rgba(255,255,255,0.88)" strokeWidth={1.4} />
+          <Smartphone size={24} color="rgba(255,255,255,0.88)" strokeWidth={1.4} />
         </div>
 
         <h2 style={{
-          fontSize: "1.15rem",
+          fontSize: "1.05rem",
           fontWeight: 700,
           color: "rgba(255,255,255,0.95)",
-          margin: "0 0 0.45rem",
+          margin: "0 0 0.35rem",
           letterSpacing: "-0.01em",
         }}>
           Gira tu dispositivo
         </h2>
 
         <p style={{
-          fontSize: "0.82rem",
-          color: "rgba(255,255,255,0.58)",
-          lineHeight: 1.65,
-          margin: "0 0 1.5rem",
+          fontSize: "0.80rem",
+          color: "rgba(255,255,255,0.60)",
+          lineHeight: 1.6,
+          margin: "0 0 1.2rem",
         }}>
           La sala 3D se disfruta mejor<br />en modo horizontal
         </p>
@@ -159,7 +167,7 @@ const RotatePrompt = () => {
         <div style={{
           height: "0.5px",
           background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)",
-          marginBottom: "1.4rem",
+          marginBottom: "1.1rem",
         }} />
 
         {/* Indicador de giro */}
@@ -168,13 +176,13 @@ const RotatePrompt = () => {
           alignItems: "center",
           justifyContent: "center",
           gap: 6,
-          fontSize: "0.75rem",
+          fontSize: "0.74rem",
           color: "rgba(255,255,255,0.45)",
-          marginBottom: "1.4rem",
+          marginBottom: "1.1rem",
           animation: "hintPulse 2.4s ease-in-out infinite",
         }}>
           <Smartphone
-            size={13}
+            size={12}
             color="rgba(255,255,255,0.45)"
             strokeWidth={2}
             style={{ transform: "rotate(90deg)" }}
@@ -185,7 +193,7 @@ const RotatePrompt = () => {
         <div style={{
           height: "0.5px",
           background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)",
-          marginBottom: "1.2rem",
+          marginBottom: "1rem",
         }} />
 
         {/* Botón Dashboard */}
@@ -197,12 +205,12 @@ const RotatePrompt = () => {
             alignItems: "center",
             justifyContent: "center",
             gap: 8,
-            padding: "0.65rem 1rem",
+            padding: "0.6rem 1rem",
             background: "rgba(255,255,255,0.08)",
             border: "1px solid rgba(255,255,255,0.20)",
             borderRadius: 12,
             color: "rgba(255,255,255,0.65)",
-            fontSize: "0.8rem",
+            fontSize: "0.78rem",
             fontFamily: "'Sora', sans-serif",
             cursor: "pointer",
             transition: "background 0.2s, border-color 0.2s, color 0.2s",
@@ -218,7 +226,7 @@ const RotatePrompt = () => {
             e.currentTarget.style.color       = "rgba(255,255,255,0.65)";
           }}
         >
-          <LayoutDashboard size={15} strokeWidth={1.8} />
+          <LayoutDashboard size={14} strokeWidth={1.8} />
           Volver al inicio
         </button>
       </div>
@@ -233,8 +241,8 @@ const RotatePrompt = () => {
           100% { transform: rotate(0deg)  scale(1);    }
         }
         @keyframes cardFadeIn {
-          from { opacity: 0; transform: scale(0.9) translateY(16px); }
-          to   { opacity: 1; transform: scale(1)   translateY(0);    }
+          from { opacity: 0; transform: scale(0.9) translateY(-12px); }
+          to   { opacity: 1; transform: scale(1)   translateY(0);     }
         }
         @keyframes hintPulse {
           0%, 100% { opacity: 0.45; }

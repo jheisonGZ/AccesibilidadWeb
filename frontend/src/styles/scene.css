@@ -289,3 +289,100 @@
     font-size: 11px;
   }
 }
+/* =============================================================================
+   MÓVIL LANDSCAPE — HUD optimizado para pantalla horizontal pequeña
+============================================================================= */
+@media (max-width: 768px) and (orientation: landscape) {
+
+  /* Paneles más delgados verticalmente */
+  .hud-panel {
+    padding: 6px 10px;
+    min-width: 0;
+  }
+
+  .hud-tl { top: 6px; left: 6px; max-width: calc(50vw - 12px); }
+  .hud-tr { top: 6px; right: 6px; max-width: calc(50vw - 12px); }
+
+  /* Nombre recortado con puntos suspensivos */
+  .hud-callsign {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
+
+  /* Avatar más pequeño */
+  .hud-avatar      { width: 26px; height: 26px; }
+  .hud-initial     { font-size: 11px; }
+  .hud-level-badge { width: 11px; height: 11px; font-size: 6px; }
+
+  /* Ocultar barras para ganar espacio */
+  .hud-bar-row     { display: none; }
+
+  /* Zona activa más compacta */
+  .hud-zone        { padding: 4px 7px; margin-bottom: 5px; }
+  .hud-zone-title  { font-size: 7px; margin-bottom: 2px; }
+  .hud-zone-name   { font-size: 13px; letter-spacing: 1.5px; }
+
+  /* Score row más compacto */
+  .hud-score-row   { margin-bottom: 6px; padding-bottom: 5px; gap: 4px; }
+  .hud-score-label { font-size: 9px; }
+  .hud-trend       { font-size: 8px; padding: 1px 4px; }
+
+  /* Botones más pequeños */
+  .hud-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    gap: 3px;
+  }
+
+  .hud-actions { gap: 4px; }
+
+  /* Status más pequeño */
+  .hud-status { font-size: 7px; letter-spacing: 1px; }
+  .hud-dot    { width: 4px; height: 4px; }
+}
+
+/* =============================================================================
+   MÓVIL MUY PEQUEÑO landscape (iPhone SE, etc.)
+============================================================================= */
+@media (max-width: 568px) and (orientation: landscape) {
+
+  .hud-panel {
+    padding: 4px 6px;
+    min-width: 0;
+  }
+
+  .hud-tl { max-width: calc(38vw - 8px); }
+  .hud-tr { max-width: calc(38vw - 8px); }
+
+  .hud-avatar { width: 22px; height: 22px; }
+  .hud-initial { font-size: 9px; }
+  .hud-level-badge { width: 9px; height: 9px; font-size: 6px; }
+
+  .hud-callsign {
+    max-width: 70px;
+    font-size: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hud-zone-name { font-size: 10px; }
+  .hud-zone-title { font-size: 6px; }
+  .hud-zone { padding: 3px 5px; }
+
+  /* Ocultar score, solo mostrar botones */
+  .hud-score-row { display: none; }
+
+  .hud-btn {
+    padding: 2px 4px;
+    font-size: 7px;
+    gap: 2px;
+  }
+
+  .hud-actions { gap: 2px; }
+}
