@@ -1,5 +1,6 @@
 import { Canvas } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
+import { useEffect, useState } from "react";
 
 import RotatePrompt from "../components/3d/mobile/RotatePrompt";
 
@@ -14,7 +15,6 @@ function Ground() {
 
 function Avatar() {
   const { scene } = useGLTF("/models/hombre.glb");
-
   return (
     <primitive
       object={scene}
@@ -24,41 +24,60 @@ function Avatar() {
   );
 }
 
+useGLTF.preload("/models/hombre.glb");
+
 export default function BasicRoom() {
+  const [dimensions, setDimensions] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
 
-  // ✅ detectar móvil inmediatamente
+  useEffect(() => {
+    const update = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+    };
+  }, []);
+
   const isMobile =
-    typeof window !== "undefined" &&
-    (
-      "ontouchstart" in window ||
-      navigator.maxTouchPoints > 0 ||
-      window.innerWidth <= 768
-    );
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0 ||
+    dimensions.width <= 768;
 
-  // ✅ detectar orientación
-  const isPortrait =
-  typeof window !== "undefined" &&
-  window.innerHeight > window.innerWidth;
+  const isPortrait = dimensions.height > dimensions.width;
 
-  // ✅ NO montar el Canvas si está vertical
   if (isMobile && isPortrait) {
     return <RotatePrompt />;
   }
 
   return (
-    <Canvas camera={{ position: [0, 3, 6], fov: 60 }}>
-
-      <ambientLight intensity={1.5} />
-
-      <directionalLight
-        position={[5, 10, 5]}
-        intensity={2}
-      />
-
-      <Ground />
-
-      <Avatar />
-
-    </Canvas>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100%",
+        height: "100dvh", // dynamic viewport height — excluye barra del browser
+        overflow: "hidden",
+      }}
+    >
+      <Canvas
+        style={{ width: "100%", height: "100%" }}
+        camera={{ position: [0, 3, 6], fov: 60 }}
+        gl={{ powerPreference: "high-performance", onContextLost: (e) => e.preventDefault() }}
+      >
+        <ambientLight intensity={1.5} />
+        <directionalLight position={[5, 10, 5]} intensity={2} />
+        <Ground />
+        <Avatar />
+      </Canvas>
+    </div>
   );
 }
