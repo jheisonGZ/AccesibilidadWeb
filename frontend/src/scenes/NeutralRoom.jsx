@@ -1,57 +1,149 @@
+// ======================================================
+// ESCENA: NEUTRAL ROOM
+// ======================================================
+
 import { Canvas } from "@react-three/fiber";
-import { Sky } from "@react-three/drei";
+import { Sky, useGLTF } from "@react-three/drei";
+// ======================================================
+// COMPONENTES 3D
+// ======================================================
 
 import PlayerController from "../components/3d/player/PlayerController";
+
+// ======================================================
+// COMPONENTES MOBILE
+// ======================================================
+
 import MobileControlsOverlay from "../components/3d/mobile/MobileControlsOverlay";
-import { useMobileControls } from "../components/3d/mobile/useMobileControls";
 import RotatePrompt from "../components/3d/mobile/RotatePrompt";
-import { useLandscapeLock } from "../components/3d/mobile/useLandscapeLock";
+
+import { useMobileControls }
+from "../components/3d/mobile/useMobileControls";
+
+import { useLandscapeLock }
+from "../components/3d/mobile/useLandscapeLock";
+
+// ======================================================
+// TERRENO
+// ======================================================
 
 function Ground() {
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+    <mesh
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[0, 0, 0]}
+      receiveShadow
+    >
       <planeGeometry args={[10, 10]} />
-      <meshStandardMaterial color="#3d9970" />
+
+      <meshStandardMaterial
+        color="#3d9970"
+      />
     </mesh>
   );
 }
 
+// ======================================================
+// LÍMITES INVISIBLES DEL MAPA
+// ======================================================
+
 function Walls() {
+
   const grosor = 0.2;
-  const alto   = 3;
-  const mitad  = 5;
+  const alto = 3;
+  const mitad = 5;
 
   return (
     <>
-      <mesh name="pared" position={[0, alto / 2, -mitad]} visible={false}>
-        <boxGeometry args={[10 + grosor, alto, grosor]} />
+      {/* Norte */}
+      <mesh
+        name="pared"
+        position={[0, alto / 2, -mitad]}
+        visible={false}
+      >
+        <boxGeometry
+          args={[10 + grosor, alto, grosor]}
+        />
         <meshStandardMaterial />
       </mesh>
-      <mesh name="pared" position={[0, alto / 2, mitad]} visible={false}>
-        <boxGeometry args={[10 + grosor, alto, grosor]} />
+
+      {/* Sur */}
+      <mesh
+        name="pared"
+        position={[0, alto / 2, mitad]}
+        visible={false}
+      >
+        <boxGeometry
+          args={[10 + grosor, alto, grosor]}
+        />
         <meshStandardMaterial />
       </mesh>
-      <mesh name="pared" position={[-mitad, alto / 2, 0]} visible={false}>
-        <boxGeometry args={[grosor, alto, 10 + grosor]} />
+
+      {/* Oeste */}
+      <mesh
+        name="pared"
+        position={[-mitad, alto / 2, 0]}
+        visible={false}
+      >
+        <boxGeometry
+          args={[grosor, alto, 10 + grosor]}
+        />
         <meshStandardMaterial />
       </mesh>
-      <mesh name="pared" position={[mitad, alto / 2, 0]} visible={false}>
-        <boxGeometry args={[grosor, alto, 10 + grosor]} />
+
+      {/* Este */}
+      <mesh
+        name="pared"
+        position={[mitad, alto / 2, 0]}
+        visible={false}
+      >
+        <boxGeometry
+          args={[grosor, alto, 10 + grosor]}
+        />
         <meshStandardMaterial />
       </mesh>
     </>
   );
 }
 
+// ======================================================
+// ESCENA PRINCIPAL
+// ======================================================
+
 export default function NeutralRoom() {
-  const mobileControls        = useMobileControls();
-  const { isPortrait }        = useLandscapeLock();
-  const isMobile              = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-  const showRotatePrompt      = isMobile && isPortrait;
+
+  // --------------------------------------------------
+  // CONTROLES MOBILE
+  // --------------------------------------------------
+
+  const mobileControls =
+    useMobileControls();
+
+  // --------------------------------------------------
+  // DETECCIÓN DE ORIENTACIÓN
+  // --------------------------------------------------
+
+  const { isPortrait } =
+    useLandscapeLock();
+
+  const isMobile =
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0;
+
+  const showRotatePrompt =
+    isMobile && isPortrait;
+
+    const tree = useGLTF(
+  "/models/Arboles/tree-1.glb"
+);
 
   return (
     <>
-      {/* ✅ Canvas SIEMPRE montado — nunca se destruye el contexto WebGL */}
+
+      {/* ==================================================
+          CONTENEDOR PRINCIPAL
+      ================================================== */}
+
       <div
         style={{
           width: "100vw",
@@ -59,38 +151,104 @@ export default function NeutralRoom() {
           overflow: "hidden",
           position: "fixed",
           inset: 0,
-          // Ocultar visualmente pero mantener en el DOM
-          visibility: showRotatePrompt ? "hidden" : "visible",
-          pointerEvents: showRotatePrompt ? "none" : "auto",
+
+          // Mantener WebGL vivo
+          visibility: showRotatePrompt
+            ? "hidden"
+            : "visible",
+
+          pointerEvents: showRotatePrompt
+            ? "none"
+            : "auto",
         }}
       >
+
+        {/* ==============================================
+            ESCENA 3D
+        ============================================== */}
+
         <Canvas
-          style={{ width: "100%", height: "100%" }}
-          camera={{ position: [0, 2.5, 3.5], fov: 60 }}
-          gl={{
-            powerPreference: "high-performance",
-            // ✅ Recuperación automática si el navegador suspende el contexto
-            onContextLost: (e) => e.preventDefault(),
+          style={{
+            width: "100%",
+            height: "100%",
           }}
-          frameloop={showRotatePrompt ? "never" : "always"} // ✅ pausa el render loop en portrait
+
+          camera={{
+            position: [0, 2.5, 3.5],
+            fov: 60,
+          }}
+
+          gl={{
+            powerPreference:
+              "high-performance",
+
+            onContextLost: (e) =>
+              e.preventDefault(),
+          }}
+
+          frameloop={
+            showRotatePrompt
+              ? "never"
+              : "always"
+          }
         >
+
+          {/* ---------- ILUMINACIÓN ---------- */}
+
           <ambientLight intensity={1.0} />
-          <Sky sunPosition={[100, 20, 100]} />
-          <directionalLight position={[5, 10, 5]} intensity={2} castShadow />
+
+          <directionalLight
+            position={[5, 10, 5]}
+            intensity={2}
+            castShadow
+          />
+
+          {/* ---------- CIELO ---------- */}
+
+          <Sky
+            sunPosition={[100, 20, 100]}
+          />
+
+          {/* ---------- ENTORNO ---------- */}
 
           <Ground />
+
+          <primitive
+  object={tree.scene.clone()}
+  position={[8, -7, 1]} // Ajusta la posición del árbol
+  scale={1}
+/>
+
           <Walls />
 
-          <PlayerController controls={mobileControls} />
+          {/* ---------- JUGADOR ---------- */}
+
+          <PlayerController
+            controls={mobileControls}
+          />
+
         </Canvas>
 
+        {/* ==============================================
+            CONTROLES MOBILE
+        ============================================== */}
+
         {isMobile && !showRotatePrompt && (
-          <MobileControlsOverlay controls={mobileControls} />
+          <MobileControlsOverlay
+            controls={mobileControls}
+          />
         )}
+
       </div>
 
-      {/* RotatePrompt encima, sin afectar el Canvas */}
-      {showRotatePrompt && <RotatePrompt />}
+      {/* ==============================================
+          MENSAJE ROTAR DISPOSITIVO
+      ============================================== */}
+
+      {showRotatePrompt && (
+        <RotatePrompt />
+      )}
+
     </>
   );
 }
