@@ -123,12 +123,12 @@ export default function NeutralRoom() {
   // DETECCIÓN DE ORIENTACIÓN
   // --------------------------------------------------
 
-  const { isPortrait } =
-    useLandscapeLock();
+    const { isPortrait } =
+      useLandscapeLock();
 
-  const isMobile =
-    "ontouchstart" in window ||
-    navigator.maxTouchPoints > 0;
+  const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
+    navigator.userAgent
+  );
 
   const showRotatePrompt =
     isMobile && isPortrait;

@@ -6,22 +6,32 @@ import "../styles/HelpModal.css";
 
 // Imágenes — una para PC, otra para móvil
 import helpControlsImageDesktop from "/images/HelpControls.webp";
-import helpControlsImageMobile  from "/images/HelpControlsMobile.webp"; // ← tu imagen para móvil
+import helpControlsImageMobile  from "/images/HelpControlsMobile.webp";
 
 // -----------------------------------------------------------------------------
-// Hook — detecta si el ancho de pantalla es móvil (< 768 px)
-// Se actualiza en tiempo real si el usuario gira el dispositivo
+// Hook — detección robusta de móvil
+// Combina userAgent (dispositivo real) + ancho de pantalla (DevTools / tablet)
 // -----------------------------------------------------------------------------
 function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(
-    () => window.innerWidth < breakpoint
-  );
+  function detect() {
+    const byAgent = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
+      navigator.userAgent
+    );
+    const byWidth = window.innerWidth < breakpoint;
+    return byAgent || byWidth;
+  }
+
+  const [isMobile, setIsMobile] = useState(detect);
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
-    const handler = (e) => setIsMobile(e.matches);
+    const handler = () => setIsMobile(detect());
     mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    window.addEventListener("resize", handler);
+    return () => {
+      mq.removeEventListener("change", handler);
+      window.removeEventListener("resize", handler);
+    };
   }, [breakpoint]);
 
   return isMobile;
@@ -158,7 +168,7 @@ const DesktopContent = () => (
 );
 
 // -----------------------------------------------------------------------------
-// Contenido para MÓVIL (táctil)
+// Contenido para MÓVIL (táctil) — mismo diseño glass, imagen y textos propios
 // -----------------------------------------------------------------------------
 const MobileContent = () => (
   <>
@@ -225,16 +235,27 @@ const MobileContent = () => (
 // Componente principal
 // -----------------------------------------------------------------------------
 const HelpModal = ({ isOpen, onClose }) => {
- const hasPlayed = useRef(false);
-  const isMobile  = useIsMobile(768); // true si ancho < 768px
+  const hasPlayed = useRef(false);
+  const isMobile  = useIsMobile(768);
 
-  // Precarga imágenes al montar — así el modal abre instantáneo
+  // Precarga imágenes al montar — el modal abre instantáneo
   useEffect(() => {
     [helpControlsImageDesktop, helpControlsImageMobile].forEach((src) => {
       const img = new Image();
       img.src = src;
     });
   }, []);
+
+  // Sonido al abrir (una sola vez por apertura)
+  useEffect(() => {
+    if (isOpen && !hasPlayed.current) {
+      soundOpen();
+      hasPlayed.current = true;
+    }
+    if (!isOpen) {
+      hasPlayed.current = false;
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -278,7 +299,7 @@ const HelpModal = ({ isOpen, onClose }) => {
         {/* Scroll interno */}
         <div className="help-modal-scroll">
 
-          {/* Encabezado — varía el texto según dispositivo */}
+          {/* Encabezado */}
           <header className="help-modal-header">
             <h2 id="help-modal-title">Guía del Entorno 3D</h2>
             <p>
