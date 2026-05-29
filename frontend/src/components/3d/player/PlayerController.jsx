@@ -190,7 +190,7 @@ function AvatarScene({ paths, controls }) {
     }
 
     // ── Límites del escenario ────────────────────────────────────────────
-    const borde = 3.7;
+    const borde = 100;
     group.current.position.x = Math.max(-borde, Math.min(borde, group.current.position.x));
     group.current.position.z = Math.max(-borde, Math.min(borde, group.current.position.z));
 
@@ -266,8 +266,8 @@ function AvatarScene({ paths, controls }) {
     velocityY.current -= 0.008;
     group.current.position.y += velocityY.current;
 
-    if (group.current.position.y <= 0.3) {
-      group.current.position.y = 0.3;
+    if (group.current.position.y <= -2) {
+      group.current.position.y = -2;
       velocityY.current = 0;
 
       // Al aterrizar: cancelar estado de salto y limpiar callbacks
@@ -298,8 +298,8 @@ function AvatarScene({ paths, controls }) {
     <primitive
       ref={group}
       object={model.scene}
-      scale={0.5}
-      position={[0, 0.3, 0]}
+      scale={0.6}
+      position={[0, 1, 5.5]}  // Posición inicial del avatar
     />
   );
 }

@@ -139,9 +139,9 @@ const DesktopContent = () => (
     </section>
 
     <section className="help-section" onMouseEnter={soundHover}>
-      <h3>Taison — tu asistente</h3>
+      <h3>Pixel — tu asistente</h3>
       <p>
-        El perrito en la esquina inferior derecha es Taison. Haz clic en él
+        El perrito en la esquina inferior derecha es Pixel. Haz clic en él
         para abrir el chat y recibir orientación emocional, técnicas de
         manejo del estrés y recursos de apoyo de la UV.
       </p>
@@ -183,8 +183,8 @@ const MobileContent = () => (
     <section className="help-section">
       <h3>Movimiento táctil</h3>
       <p>
-        Usa el <strong>joystick virtual</strong> izquierdo para desplazarte
-        por el entorno. Arrastra con el dedo para girar la cámara.
+        Usa el <strong>joystick virtual derecho </strong> para desplazarte
+        por el entorno. 
       </p>
     </section>
 
@@ -206,10 +206,10 @@ const MobileContent = () => (
     </section>
 
     <section className="help-section">
-      <h3>Taison — tu asistente</h3>
+      <h3>Pixel — tu asistente</h3>
       <p>
         Toca el ícono del perrito en la esquina inferior derecha para
-        chatear con Taison y recibir orientación emocional y recursos de la UV.
+        chatear con Pixel y recibir orientación emocional y recursos de la UV.
       </p>
     </section>
 

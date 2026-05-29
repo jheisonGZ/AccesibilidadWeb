@@ -242,7 +242,7 @@ export default function Scene() {
       </div>
 
       {/* ── ESCENA 3D — se pausa cuando el modal está abierto ── */}
-      <SceneComponent emotion={emotion} paused={isHelpOpen} />
+      <SceneComponent emotion={emotion} />
 
       {/* ── OVERLAY DE OSCURECIMIENTO — aparece entre el Canvas y el modal ── */}
       {isHelpOpen && (
