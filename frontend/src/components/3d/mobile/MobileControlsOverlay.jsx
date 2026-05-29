@@ -41,8 +41,8 @@ export default function MobileControlsOverlay({
       <div
         style={{
           position: "absolute",
-          right: 20,
-          bottom: 40,
+          right: 30,
+          bottom: 70,
           display: "flex",
           flexDirection: "column",
           gap: 20,
@@ -52,10 +52,11 @@ export default function MobileControlsOverlay({
         {/* CORRER - HUELLAS */}
         <button
           style={{
-            width: 60,
-            height: 60,
+            width: 50,
+            height: 50,
             borderRadius: "50%",
             border: "none",
+            outline: "none",
             background: runPressed ? "#2563eb" : "#3b82f6",
             color: "white",
             display: "flex",
@@ -97,10 +98,11 @@ export default function MobileControlsOverlay({
         {/* SALTAR - FLECHA ARRIBA */}
         <button
           style={{
-            width: 60,
-            height: 60,
+            width: 50,
+            height: 50,
             borderRadius: "50%",
             border: "none",
+            outline: "none",
             background: jumpPressed ? "#059669" : "#10b981",
             color: "white",
             display: "flex",
