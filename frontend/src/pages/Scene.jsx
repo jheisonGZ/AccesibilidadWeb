@@ -123,9 +123,7 @@ export default function Scene() {
     }
   };
 
-  
   if (loading) return <div style={{ background: "#080e08", height: "100vh" }} />;
-  
 
   const SceneComponent =
     emotion === "ansiedad" ? AnxietyRoom :
@@ -211,45 +209,61 @@ export default function Scene() {
         </div>
 
         <div className="hud-actions">
-  <button
-    className="hud-btn hud-btn-primary"
-    onClick={() => navigate("/home")}
-  >
-    <LayoutDashboard size={13} strokeWidth={2} />
-    BASE
-  </button>
+          <button
+            className="hud-btn hud-btn-primary"
+            onClick={() => navigate("/home")}
+          >
+            <LayoutDashboard size={13} strokeWidth={2} />
+            BASE
+          </button>
 
-  <button
-    className="hud-btn"
-    onClick={() => setIsHelpOpen(true)}    
-    title="Centro de ayuda"
-    style={{
-      border: "1px solid #4b5563",
-      background: "#1f2937",
-      color: "#d1d5db"
-    }}
-  >
-    <CircleHelp size={13} strokeWidth={2} />
-  </button>
+          <button
+            className="hud-btn"
+            onClick={() => setIsHelpOpen(true)}
+            title="Centro de ayuda"
+            style={{
+              border: "1px solid #4b5563",
+              background: "#1f2937",
+              color: "#d1d5db"
+            }}
+          >
+            <CircleHelp size={13} strokeWidth={2} />
+          </button>
 
-  <button
-    className="hud-btn hud-btn-danger"
-    onClick={handleLogout}
-  >
-    <LogOut size={13} strokeWidth={2} />
-    SALIR
-  </button>
-</div>
+          <button
+            className="hud-btn hud-btn-danger"
+            onClick={handleLogout}
+          >
+            <LogOut size={13} strokeWidth={2} />
+            SALIR
+          </button>
+        </div>
 
       </div>
 
-            {/* ── ESCENA 3D ── */}
-      <SceneComponent emotion={emotion} />
-     
+      {/* ── ESCENA 3D — se pausa cuando el modal está abierto ── */}
+      <SceneComponent emotion={emotion} paused={isHelpOpen} />
+
+      {/* ── OVERLAY DE OSCURECIMIENTO — aparece entre el Canvas y el modal ── */}
+      {isHelpOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9998,
+            background: "rgba(0, 0, 0, 0.55)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
+      {/* ── MODAL DE AYUDA ── */}
       <HelpModal
-  isOpen={isHelpOpen}
-  onClose={() => setIsHelpOpen(false)}
-/>
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+      />
 
     </div>
   );

@@ -4,6 +4,7 @@
 
 import { Canvas } from "@react-three/fiber";
 import { Sky, useGLTF } from "@react-three/drei";
+
 // ======================================================
 // COMPONENTES 3D
 // ======================================================
@@ -35,10 +36,7 @@ function Ground() {
       receiveShadow
     >
       <planeGeometry args={[10, 10]} />
-
-      <meshStandardMaterial
-        color="#3d9970"
-      />
+      <meshStandardMaterial color="#3d9970" />
     </mesh>
   );
 }
@@ -48,7 +46,6 @@ function Ground() {
 // ======================================================
 
 function Walls() {
-
   const grosor = 0.2;
   const alto = 3;
   const mitad = 5;
@@ -56,50 +53,26 @@ function Walls() {
   return (
     <>
       {/* Norte */}
-      <mesh
-        name="pared"
-        position={[0, alto / 2, -mitad]}
-        visible={false}
-      >
-        <boxGeometry
-          args={[10 + grosor, alto, grosor]}
-        />
+      <mesh name="pared" position={[0, alto / 2, -mitad]} visible={false}>
+        <boxGeometry args={[10 + grosor, alto, grosor]} />
         <meshStandardMaterial />
       </mesh>
 
       {/* Sur */}
-      <mesh
-        name="pared"
-        position={[0, alto / 2, mitad]}
-        visible={false}
-      >
-        <boxGeometry
-          args={[10 + grosor, alto, grosor]}
-        />
+      <mesh name="pared" position={[0, alto / 2, mitad]} visible={false}>
+        <boxGeometry args={[10 + grosor, alto, grosor]} />
         <meshStandardMaterial />
       </mesh>
 
       {/* Oeste */}
-      <mesh
-        name="pared"
-        position={[-mitad, alto / 2, 0]}
-        visible={false}
-      >
-        <boxGeometry
-          args={[grosor, alto, 10 + grosor]}
-        />
+      <mesh name="pared" position={[-mitad, alto / 2, 0]} visible={false}>
+        <boxGeometry args={[grosor, alto, 10 + grosor]} />
         <meshStandardMaterial />
       </mesh>
 
       {/* Este */}
-      <mesh
-        name="pared"
-        position={[mitad, alto / 2, 0]}
-        visible={false}
-      >
-        <boxGeometry
-          args={[grosor, alto, 10 + grosor]}
-        />
+      <mesh name="pared" position={[mitad, alto / 2, 0]} visible={false}>
+        <boxGeometry args={[grosor, alto, 10 + grosor]} />
         <meshStandardMaterial />
       </mesh>
     </>
@@ -110,32 +83,31 @@ function Walls() {
 // ESCENA PRINCIPAL
 // ======================================================
 
-export default function NeutralRoom() {
+export default function NeutralRoom({ paused = false }) {
 
   // --------------------------------------------------
   // CONTROLES MOBILE
   // --------------------------------------------------
 
-  const mobileControls =
-    useMobileControls();
+  const mobileControls = useMobileControls();
 
   // --------------------------------------------------
   // DETECCIÓN DE ORIENTACIÓN
   // --------------------------------------------------
 
-    const { isPortrait } =
-      useLandscapeLock();
+  const { isPortrait } = useLandscapeLock();
 
   const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
     navigator.userAgent
   );
 
-  const showRotatePrompt =
-    isMobile && isPortrait;
+  const showRotatePrompt = isMobile && isPortrait;
 
-    const tree = useGLTF(
-  "/models/Arboles/tree-1.glb"
-);
+  const tree = useGLTF("/models/Arboles/tree-1.glb");
+
+  // El Canvas se pausa si el modal está abierto O si hay que rotar
+  const frameloop =
+    paused || showRotatePrompt ? "never" : "always";
 
   return (
     <>
@@ -152,14 +124,9 @@ export default function NeutralRoom() {
           position: "fixed",
           inset: 0,
 
-          // Mantener WebGL vivo
-          visibility: showRotatePrompt
-            ? "hidden"
-            : "visible",
-
-          pointerEvents: showRotatePrompt
-            ? "none"
-            : "auto",
+          // Mantener WebGL vivo pero oculto al rotar
+          visibility: showRotatePrompt ? "hidden" : "visible",
+          pointerEvents: showRotatePrompt ? "none" : "auto",
         }}
       >
 
@@ -168,29 +135,13 @@ export default function NeutralRoom() {
         ============================================== */}
 
         <Canvas
-          style={{
-            width: "100%",
-            height: "100%",
-          }}
-
-          camera={{
-            position: [0, 2.5, 3.5],
-            fov: 60,
-          }}
-
+          style={{ width: "100%", height: "100%" }}
+          camera={{ position: [0, 2.5, 3.5], fov: 60 }}
           gl={{
-            powerPreference:
-              "high-performance",
-
-            onContextLost: (e) =>
-              e.preventDefault(),
+            powerPreference: "high-performance",
+            onContextLost: (e) => e.preventDefault(),
           }}
-
-          frameloop={
-            showRotatePrompt
-              ? "never"
-              : "always"
-          }
+          frameloop={frameloop}
         >
 
           {/* ---------- ILUMINACIÓN ---------- */}
@@ -205,27 +156,23 @@ export default function NeutralRoom() {
 
           {/* ---------- CIELO ---------- */}
 
-          <Sky
-            sunPosition={[100, 20, 100]}
-          />
+          <Sky sunPosition={[100, 20, 100]} />
 
           {/* ---------- ENTORNO ---------- */}
 
           <Ground />
 
           <primitive
-  object={tree.scene.clone()}
-  position={[8, -7, 1]} // Ajusta la posición del árbol
-  scale={1}
-/>
+            object={tree.scene.clone()}
+            position={[8, -7, 1]}
+            scale={1}
+          />
 
           <Walls />
 
           {/* ---------- JUGADOR ---------- */}
 
-          <PlayerController
-            controls={mobileControls}
-          />
+          <PlayerController controls={mobileControls} />
 
         </Canvas>
 
@@ -234,9 +181,7 @@ export default function NeutralRoom() {
         ============================================== */}
 
         {isMobile && !showRotatePrompt && (
-          <MobileControlsOverlay
-            controls={mobileControls}
-          />
+          <MobileControlsOverlay controls={mobileControls} />
         )}
 
       </div>
@@ -245,9 +190,7 @@ export default function NeutralRoom() {
           MENSAJE ROTAR DISPOSITIVO
       ============================================== */}
 
-      {showRotatePrompt && (
-        <RotatePrompt />
-      )}
+      {showRotatePrompt && <RotatePrompt />}
 
     </>
   );
