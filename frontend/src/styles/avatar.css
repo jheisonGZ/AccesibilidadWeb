@@ -3,19 +3,16 @@
    ════════════════════════════════ */
 .av-page {
   min-height: 100vh;
-  min-height: 100dvh; 
+  min-height: 100dvh;
   display: flex;
-  align-items: center;      /* Centrado vertical */
-  justify-content: center;   /* Centrado horizontal */
-  padding: 3% ;            /* Padding uniforme para que no toque los bordes en pantallas chicas */
+  align-items: center;
+  justify-content: center;
+  padding: 2%;
   position: relative;
-  overflow-x: hidden;
-  overflow-y: hidden;         /* Permite scroll si la pantalla es muy pequeña */
+  overflow: hidden;
   font-family: 'Segoe UI', sans-serif;
   color: white;
-  -webkit-overflow-scrolling: touch;
   box-sizing: border-box;
-  
 }
 
 .av-page::before {
@@ -38,6 +35,9 @@
   z-index: 1;
 }
 
+/* ════════════════════════════════
+   CONTENEDOR PRINCIPAL
+   ════════════════════════════════ */
 .av-container {
   width: 100%;
   max-width: 900px;
@@ -46,7 +46,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
+  gap: 12px;                /* ← menos gap para que quepa todo sin scroll */
 }
 
 /* ════════════════════════════════
@@ -57,7 +57,7 @@
 .av-title {
   font-size: 2rem;
   font-weight: 800;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   background: linear-gradient(90deg, #7ecfff, #c084fc);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -65,9 +65,9 @@
 }
 
 .av-subtitle {
-  font-size: 0.95rem;
-  opacity: 0.6;
-  max-width: 420px;
+  font-size: 0.9rem;
+  opacity: 0.55;
+  max-width: 400px;
   margin: 0 auto;
   line-height: 1.5;
 }
@@ -78,6 +78,8 @@
 .av-filters {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .av-filter-btn {
@@ -91,9 +93,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: 'Segoe UI', sans-serif;
-  /* Área mínima de toque recomendada por Apple/Google: 44px */
   min-height: 44px;
-  /* Evita el highlight azul en Android al tocar */
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
@@ -110,87 +110,101 @@
 }
 
 /* ════════════════════════════════
-   GRID DE TARJETAS
+   SHOWCASE — fila con flechas + canvas
    ════════════════════════════════ */
-.av-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+.av-showcase {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
   width: 100%;
 }
 
-/* ════════════════════════════════
-   TARJETA DE AVATAR
-   ════════════════════════════════ */
-.av-card {
+/* Flechas laterales */
+.av-arrow {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
   background: rgba(255,255,255,0.07);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1.5px solid rgba(255,255,255,0.1);
-  border-radius: 20px;
-  overflow: hidden;
-  cursor: pointer;
-  position: relative;
-  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 1.4rem;
   display: flex;
-  flex-direction: column;
-  /* Sin highlight azul en Android */
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  /* Evita selección de texto accidental al hacer tap rápido */
   user-select: none;
   -webkit-user-select: none;
 }
 
-.av-card:hover {
-  transform: translateY(-6px);
-  border-color: rgba(255,255,255,0.25);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+.av-arrow:hover {
+  background: rgba(126,207,255,0.18);
+  border-color: #7ecfff;
+  color: #7ecfff;
+  transform: scale(1.08);
 }
 
-/* En móvil el hover no aplica — el active reemplaza el feedback visual */
-@media (hover: none) {
-  .av-card:hover {
-    transform: none;
-    border-color: rgba(255,255,255,0.1);
-    box-shadow: none;
-  }
+.av-arrow:active {
+  transform: scale(0.94);
+  transition: transform 0.1s ease;
+}
 
-  .av-card:active {
-    transform: scale(0.97);
-    border-color: rgba(255,255,255,0.25);
-    transition: transform 0.1s ease;
-  }
+.av-arrow:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ════════════════════════════════
+   TARJETA CENTRAL
+   ════════════════════════════════ */
+.av-card {
+  flex: 1;
+  max-width: 340px;
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: 24px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .av-card.selected {
   border-color: var(--av-accent, #7ecfff);
   box-shadow:
     0 0 0 3px color-mix(in srgb, var(--av-accent, #7ecfff) 20%, transparent),
-    0 16px 40px rgba(0,0,0,0.35);
-  transform: translateY(-6px);
+    0 20px 50px rgba(0,0,0,0.4);
 }
 
-@media (hover: none) {
-  .av-card.selected {
-    transform: none;
-  }
-}
-
-/* check de selección */
+/* check badge */
 .av-check {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 24px;
-  height: 24px;
+  top: 12px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--av-accent, #7ecfff);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #0d1b2a;
-  z-index: 10; /* encima del overlay */
+  z-index: 10;
   animation: popIn 0.2s cubic-bezier(.34,1.56,.64,1) both;
 }
 
@@ -205,15 +219,9 @@
 .av-canvas-wrap {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 280px;
   background: rgba(0,0,0,0.2);
   overflow: hidden;
-  /*
-   * ANTES: touch-action: none — bloqueaba taps en móvil con 4 avatares
-   *        porque el canvas cubría toda la tarjeta y absorbía los eventos.
-   * AHORA: touch-action: auto — el canvas hijo maneja su propio touch-action,
-   *        y el overlay transparente captura los taps con manipulation.
-   */
   touch-action: auto;
 }
 
@@ -226,33 +234,19 @@
   width: 100% !important;
   height: 100% !important;
   display: block;
-  /*
-   * touch-action: none aplicado directamente al canvas de Three.js.
-   * OrbitControls necesita esto para funcionar correctamente,
-   * pero ahora solo afecta al canvas y no al wrap completo.
-   */
   touch-action: none;
 }
 
-/*
- * Overlay transparente encima del canvas de Three.js.
- * Captura taps en móvil y los redirige al handler del avatar via onTap prop.
- * z-index: 5 — encima del canvas (z auto) pero debajo del .av-check (z 10).
- * touch-action: manipulation — permite tap y doble tap, bloquea pan/zoom
- * del browser pero NO interfiere con el scroll de la página.
- */
 .av-canvas-tap-overlay {
   position: absolute;
   inset: 0;
   z-index: 5;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  /* Sin background — completamente transparente */
   background: transparent;
   cursor: pointer;
 }
 
-/* placeholder mientras carga el GLB */
 .av-canvas-placeholder {
   position: absolute;
   inset: 0;
@@ -264,11 +258,9 @@
   background: rgba(0,0,0,0.25);
   border-bottom: 2px solid;
   border-color: inherit;
-  /* El placeholder también queda encima del overlay durante la carga */
   z-index: 6;
 }
 
-/* punto animado de carga */
 .av-loading-dot {
   width: 6px;
   height: 6px;
@@ -286,34 +278,60 @@
    INFO DEBAJO DEL CANVAS
    ════════════════════════════════ */
 .av-info {
-  padding: 14px 16px 16px;
+  padding: 16px 20px 20px;
   display: flex;
   flex-direction: column;
   gap: 5px;
   flex: 1;
+  text-align: center;
 }
 
 .av-gender-tag {
   font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.4px;
   text-transform: uppercase;
   color: var(--av-accent, #7ecfff);
   opacity: 0.85;
 }
 
 .av-name {
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: 800;
   color: #fff;
   margin: 0;
 }
 
 .av-desc {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: rgba(255,255,255,0.5);
   line-height: 1.4;
   margin: 0;
+}
+
+/* ════════════════════════════════
+   DOTS — indicador de posición
+   ════════════════════════════════ */
+.av-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.av-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.av-dot.active {
+  background: var(--av-dot-color, #7ecfff);
+  transform: scale(1.4);
 }
 
 /* ════════════════════════════════
@@ -332,7 +350,6 @@
   font-family: 'Segoe UI', sans-serif;
   min-width: 280px;
   justify-content: center;
-  /* Área mínima de toque */
   min-height: 52px;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -340,7 +357,6 @@
   -webkit-user-select: none;
 }
 
-/* estado: sin selección */
 .av-btn:disabled:not([data-loading]) {
   background: rgba(255,255,255,0.06);
   border: 1.5px solid rgba(255,255,255,0.12);
@@ -348,7 +364,6 @@
   cursor: not-allowed;
 }
 
-/* estado: con selección */
 .av-btn:not(:disabled) {
   background: rgba(126,207,255,0.15);
   border: 1.5px solid rgba(126,207,255,0.4);
@@ -367,7 +382,6 @@
   transition: transform 0.1s ease;
 }
 
-/* estado: guardando */
 .av-btn:disabled[data-loading] {
   background: rgba(126,207,255,0.1);
   border: 1.5px solid rgba(126,207,255,0.2);
@@ -380,29 +394,25 @@
    ════════════════════════════════ */
 @media (max-width: 768px) {
   .av-page {
-    padding: 64px 16px 40px;
-    align-items: center;
+    padding: 60px 16px 32px;
   }
 
   .av-container {
-    gap: 20px;
+    gap: 16px;
   }
 
   .av-title {
     font-size: 1.6rem;
   }
 
-  .av-subtitle {
-    font-size: 0.88rem;
-  }
-
-  .av-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
   .av-canvas-wrap {
-    height: 180px;
+    height: 300px;
+  }
+
+  .av-arrow {
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
   }
 
   .av-btn {
@@ -416,55 +426,41 @@
    ════════════════════════════════ */
 @media (max-width: 480px) {
   .av-page {
-    padding: 56px 12px 32px;
+    padding: 52px 12px 24px;
   }
 
   .av-container {
-    gap: 16px;
-  }
-
-  .av-header {
-    padding: 0 4px;
+    gap: 14px;
   }
 
   .av-title {
     font-size: 1.4rem;
-    margin-bottom: 6px;
   }
 
   .av-subtitle {
     font-size: 0.82rem;
   }
 
-  .av-filters {
-    gap: 8px;
+  .av-showcase {
+    gap: 12px;
   }
 
-  .av-filter-btn {
-    padding: 6px 16px;
-    font-size: 0.78rem;
-  }
-
-  .av-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+  .av-arrow {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
   }
 
   .av-canvas-wrap {
-    height: 155px;
+    height: 260px;
   }
 
   .av-info {
-    padding: 10px 12px 12px;
-    gap: 3px;
+    padding: 12px 16px 16px;
   }
 
   .av-name {
-    font-size: 0.9rem;
-  }
-
-  .av-desc {
-    font-size: 0.7rem;
+    font-size: 1.15rem;
   }
 
   .av-btn {
@@ -476,58 +472,45 @@
 }
 
 /* ════════════════════════════════
-   RESPONSIVE — MÓVIL MUY PEQUEÑO (≤ 360px)
-   Ej: Galaxy A series, Moto G
+   MÓVIL MUY PEQUEÑO (≤ 360px)
    ════════════════════════════════ */
 @media (max-width: 360px) {
   .av-title {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
   }
 
   .av-canvas-wrap {
-    height: 135px;
+    height: 220px;
   }
 
-  .av-filter-btn {
-    padding: 5px 12px;
-    font-size: 0.74rem;
-  }
-
-  .av-grid {
-    gap: 8px;
-  }
-
-  .av-info {
-    padding: 8px 10px 10px;
-  }
-
-  .av-name {
-    font-size: 0.85rem;
+  .av-arrow {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
   }
 }
 
 /* ════════════════════════════════
-   ORIENTACIÓN HORIZONTAL EN MÓVIL
-   Evita que el grid se rompa en landscape
+   LANDSCAPE MÓVIL
    ════════════════════════════════ */
 @media (max-width: 768px) and (orientation: landscape) {
   .av-page {
-    padding: 48px 20px 24px;
+    padding: 40px 20px 16px;
   }
 
-  .av-grid {
-    grid-template-columns: repeat(4, 1fr);
+  .av-container {
     gap: 10px;
   }
 
   .av-canvas-wrap {
-    height: 130px;
+    height: 200px;
   }
 
-  .av-container {
-    gap: 14px;
+  .av-card {
+    max-width: 260px;
   }
 }
+
 html,
 body,
 #root {

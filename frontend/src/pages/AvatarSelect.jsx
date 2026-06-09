@@ -2,12 +2,12 @@
 // src/pages/AvatarSelect.jsx
 // =============================================================================
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../services/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import Swal from "sweetalert2";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 import * as THREE from "three";
 import { GLTFLoader } from "three-stdlib";
@@ -19,60 +19,44 @@ import { useAppNavigate, usePageReady } from "../providers/NavigationContext";
 import { useFeedback } from "../hooks/useFeedback";
 
 // =============================================================================
-// HÁPTICA — Vibration API (Android) + fallback silencioso en iOS
+// HÁPTICA
 // =============================================================================
-const vibrateSelect = () => {
-  try { navigator.vibrate?.(18); } catch (e) {}
-};
-
-const vibrateConfirm = () => {
-  try { navigator.vibrate?.([30, 60, 60]); } catch (e) {}
-};
+const vibrateSelect  = () => { try { navigator.vibrate?.(18);         } catch (e) {} };
+const vibrateConfirm = () => { try { navigator.vibrate?.([30,60,60]); } catch (e) {} };
 
 // =============================================================================
-// SONIDOS — Web Audio API con formas de onda suaves
+// SONIDOS
 // =============================================================================
-
-// "Pop" suave — disparado una sola vez desde el useEffect de isSelected
 const playSelectSound = () => {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
+    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+    const osc  = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    osc.connect(gain); gain.connect(ctx.destination);
     osc.type = "sine";
     osc.frequency.setValueAtTime(600, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.08);
     gain.gain.setValueAtTime(0.22, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.13);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.13);
     osc.onended = () => ctx.close();
   } catch (e) {}
 };
 
-// Acorde cálido Do-Mi-Sol — disparado en didOpen del Swal
 const playConfirmSound = () => {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const freqs = [523.25, 659.25, 783.99];
-    freqs.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
+    [523.25, 659.25, 783.99].forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "sine";
-      osc.frequency.value = freq;
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = "sine"; osc.frequency.value = freq;
       const t = ctx.currentTime + i * 0.06;
       gain.gain.setValueAtTime(0, t);
       gain.gain.linearRampToValueAtTime(0.14, t + 0.03);
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
-      osc.start(t);
-      osc.stop(t + 0.5);
-      if (i === freqs.length - 1) {
-        osc.onended = () => ctx.close();
-      }
+      osc.start(t); osc.stop(t + 0.5);
+      if (i === 2) osc.onended = () => ctx.close();
     });
   } catch (e) {}
 };
@@ -117,6 +101,33 @@ const AVATARS = [
     model: "/models/mujer.glb",
     staticAnim: "/models/animations/estatica.glb",
   },
+  {
+    id: "male-3",
+    name: "Mateo",
+    gender: "Masculino",
+    desc: "Deportista y muy sociable.",
+    color: "#86efac",
+    model: "/models/hombre3.glb",
+    staticAnim: "/models/animations/estatico.glb",
+  },
+  {
+    id: "female-3",
+    name: "Isabela",
+    gender: "Femenino",
+    desc: "Artista y llena de ideas.",
+    color: "#f0abfc",
+    model: "/models/mujer3.glb",
+    staticAnim: "/models/animations/estatica.glb",
+  },
+  {
+    id: "nb-1",
+    name: "Camilo",
+    gender: "No binario",
+    desc: "Libre, autentico y curioso.",
+    color: "#fbbf24",
+    model: "/models/no_binaria.glb",
+    staticAnim: "/models/animations/estatica.glb",
+  },
 ];
 
 // =============================================================================
@@ -134,31 +145,25 @@ const idleClipCache = {};
 
 function loadIdleClip(url) {
   if (idleClipCache[url]) return idleClipCache[url];
-
   const promise = new Promise((resolve) => {
     const loader = new GLTFLoader();
     loader.setDRACOLoader(sharedDracoLoader);
     loader.load(
       url,
       (gltf) => {
-        if (gltf.animations && gltf.animations.length > 0) {
+        if (gltf.animations?.length > 0) {
           const clip = THREE.AnimationClip.parse(
             THREE.AnimationClip.toJSON(gltf.animations[0])
           );
           resolve(clip);
         } else {
-          console.warn("loadIdleClip: no animations in", url);
           resolve(null);
         }
       },
       undefined,
-      () => {
-        console.warn("loadIdleClip: failed to load", url);
-        resolve(null);
-      }
+      () => resolve(null)
     );
   });
-
   idleClipCache[url] = promise;
   return promise;
 }
@@ -167,18 +172,16 @@ function loadIdleClip(url) {
 // AvatarCanvas
 // =============================================================================
 function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl, onTap }) {
-  const mountRef = useRef(null);
-  const sceneRef = useRef({});
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  const mountRef          = useRef(null);
+  const sceneRef          = useRef({});
+  const [loaded, setLoaded]   = useState(false);
+  const [error,  setError]    = useState(false);
   const greetingPlayedRef = useRef(false);
   const soundPlayedRef    = useRef(false);
 
-  // ── Setup Three.js ────────────────────────────────────────────────────────
   useEffect(() => {
     const el = mountRef.current;
     if (!el) return;
-
     sceneRef.current = {};
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -208,7 +211,7 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl, onTap
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableZoom    = false;
     controls.enablePan     = false;
-    controls.enableRotate  = false; // ← FIJA el personaje, no se puede rotar con drag
+    controls.enableRotate  = false;
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.autoRotate    = false;
@@ -251,10 +254,7 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl, onTap
         model.position.sub(center.multiplyScalar(scale));
         model.position.y += 0.05;
         model.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow    = true;
-            child.receiveShadow = true;
-          }
+          if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; }
         });
         scene.add(model);
 
@@ -262,7 +262,7 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl, onTap
         sceneRef.current.model = model;
         sceneRef.current.mixer = mixer;
 
-        if (gltf.animations && gltf.animations.length > 0) {
+        if (gltf.animations?.length > 0) {
           const greetingAction = mixer.clipAction(gltf.animations[0]);
           greetingAction.setLoop(THREE.LoopOnce, 1);
           greetingAction.clampWhenFinished = true;
@@ -275,12 +275,9 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl, onTap
         if (idleClip) {
           const idleAction = mixer.clipAction(idleClip);
           idleAction.setLoop(THREE.LoopRepeat, Infinity);
-          idleAction.reset();
-          idleAction.play();
+          idleAction.reset().play();
           idleAction.paused = false;
           sceneRef.current.idleAction = idleAction;
-        } else {
-          console.warn("No idle clip for", modelUrl);
         }
 
         setLoaded(true);
@@ -301,7 +298,6 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl, onTap
     };
   }, [modelUrl, accentColor, staticModelUrl]);
 
-  // ── React to selection ────────────────────────────────────────────────────
   useEffect(() => {
     const { renderer } = sceneRef.current;
     if (!renderer) return;
@@ -315,15 +311,10 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl, onTap
       greetingPlayedRef.current = false;
       soundPlayedRef.current    = false;
       const idle = sceneRef.current.idleAction;
-      if (idle && idle.paused) {
-        idle.reset();
-        idle.play();
-        idle.paused = false;
-      }
+      if (idle && idle.paused) { idle.reset().play(); idle.paused = false; }
       return;
     }
 
-    // Sonido + vibración solo la primera vez que se selecciona
     if (!soundPlayedRef.current) {
       soundPlayedRef.current = true;
       playSelectSound();
@@ -331,17 +322,14 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl, onTap
     }
 
     if (greetingPlayedRef.current) return;
-
     const { greetingAction, mixer } = sceneRef.current;
     if (!greetingAction || !mixer) return;
 
     greetingPlayedRef.current = true;
-
     const idle = sceneRef.current.idleAction;
     if (idle) { idle.stop(); idle.reset(); }
 
-    greetingAction.stop();
-    greetingAction.reset();
+    greetingAction.stop().reset();
     greetingAction.time   = 0;
     greetingAction.paused = false;
     greetingAction.play();
@@ -351,25 +339,16 @@ function AvatarCanvas({ modelUrl, accentColor, isSelected, staticModelUrl, onTap
       mixer.removeEventListener("finished", onFinished);
       greetingAction.paused = true;
     };
-
     mixer.addEventListener("finished", onFinished);
   }, [isSelected, accentColor, modelUrl]);
 
   return (
     <div className="av-canvas-wrap">
       <div ref={mountRef} className="av-canvas" />
-
-      {/* ── Overlay transparente para capturar taps en móvil ── */}
-      {/* Queda encima del canvas de Three.js pero debajo del check badge */}
-      {/* Redirige el tap al handler del padre .av-card via onTap prop    */}
       <div
         className="av-canvas-tap-overlay"
-        onClick={(e) => {
-          e.stopPropagation(); // evita doble disparo con el onClick del padre
-          onTap?.();
-        }}
+        onClick={(e) => { e.stopPropagation(); onTap?.(); }}
       />
-
       {(!loaded || error) && (
         <div className="av-canvas-placeholder" style={{ borderColor: accentColor }}>
           <ChibiSVG color={accentColor} />
@@ -409,25 +388,67 @@ function ChibiSVG({ color = "#7ecfff" }) {
 // AvatarSelect
 // =============================================================================
 export default function AvatarSelect() {
-  const rawNavigate = useNavigate();     // escape hatch si sesión expiró
-  const navigate    = useAppNavigate();  // navegación con overlay de loading
+  const rawNavigate = useNavigate();
+  const navigate    = useAppNavigate();
   const fb          = useFeedback();
   usePageReady();
 
+  const [filter,   setFilter]   = useState("Todos");
+  const [index,    setIndex]    = useState(0);   // posición en la lista filtrada
   const [selected, setSelected] = useState(null);
   const [loading,  setLoading]  = useState(false);
-  const [filter,   setFilter]   = useState("Todos");
 
-  const filtered =
-    filter === "Todos" ? AVATARS : AVATARS.filter((a) => a.gender === filter);
+  // Lista filtrada según el filtro activo
+  const filtered = filter === "Todos"
+    ? AVATARS
+    : AVATARS.filter((a) => a.gender === filter);
 
-  const handleSelect = (id) => {
-    setSelected(id);
+  // Cuando cambia el filtro, resetear índice
+  const handleFilter = (f) => {
+    setFilter(f);
+    setIndex(0);
+    setSelected(null);
+    fb.cardClick();
+  };
+
+  const current = filtered[index] ?? filtered[0];
+
+  const goPrev = useCallback(() => {
+    setIndex((i) => Math.max(0, i - 1));
+    vibrateSelect();
+  }, []);
+
+  const goNext = useCallback(() => {
+    setIndex((i) => Math.min(filtered.length - 1, i + 1));
+    vibrateSelect();
+  }, [filtered.length]);
+
+  // Teclado — flechas izquierda/derecha
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "ArrowLeft")  goPrev();
+      if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goPrev, goNext]);
+
+  // Swipe táctil horizontal
+  const touchStartX = useRef(null);
+  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchEnd   = (e) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) { diff > 0 ? goNext() : goPrev(); }
+    touchStartX.current = null;
+  };
+
+  const handleSelect = () => {
+    setSelected(current.id);
   };
 
   const handleContinue = async () => {
     if (!selected) return;
-
     setLoading(true);
     vibrateConfirm();
     fb.avatarConfirm();
@@ -436,15 +457,12 @@ export default function AvatarSelect() {
       const user = auth.currentUser;
       if (!user) { rawNavigate("/"); return; }
 
-      // 1. Guardar en Firestore — await garantiza que FlowGuard lo encuentre
       await setDoc(doc(db, "users", user.uid), { avatar: selected }, { merge: true });
       localStorage.setItem("avatar", selected);
 
-      // 2. Guard: verificar que el avatar existe en el array local
       const av = AVATARS.find((a) => a.id === selected);
       if (!av) throw new Error("Avatar no encontrado: " + selected);
 
-      // 3. Toast sin await — no bloquea la navegación
       Swal.fire({
         icon: "success",
         title: `${av.name} seleccionado`,
@@ -457,7 +475,6 @@ export default function AvatarSelect() {
         iconColor: av.color,
       });
 
-      // 4. Navegar inmediatamente — AvatarSelect se desmonta en el mismo tick
       navigate("/home/scene", "Cargando escenario 3D");
 
     } catch (e) {
@@ -477,6 +494,8 @@ export default function AvatarSelect() {
   return (
     <div className="av-page">
       <div className="av-container">
+
+        {/* ── Encabezado ── */}
         <div className="av-header">
           <h1 className="av-title">Elige tu avatar</h1>
           <p className="av-subtitle">
@@ -484,51 +503,81 @@ export default function AvatarSelect() {
           </p>
         </div>
 
+        {/* ── Filtros ── */}
         <div className="av-filters">
-          {["Todos", "Masculino", "Femenino"].map((f) => (
+          {["Todos", "Masculino", "Femenino", "No binario"].map((f) => (
             <button
               key={f}
               className={`av-filter-btn ${filter === f ? "active" : ""}`}
-              onClick={() => {
-                setFilter(f);
-                setSelected(null);
-                fb.cardClick();
-              }}
+              onClick={() => handleFilter(f)}
             >
               {f}
             </button>
           ))}
         </div>
 
-        <div className="av-grid">
-          {filtered.map((av) => (
+        {/* ── Showcase: flecha ← | card | flecha → ── */}
+        <div
+          className="av-showcase"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          <button
+            className="av-arrow"
+            onClick={goPrev}
+            disabled={index === 0}
+            aria-label="Anterior"
+          >
+            <ChevronLeft size={22} />
+          </button>
+
+          <div
+            className={`av-card ${selected === current.id ? "selected" : ""}`}
+            style={{ "--av-accent": current.color }}
+            onClick={handleSelect}
+          >
+            {selected === current.id && (
+              <div className="av-check">
+                <Check size={14} strokeWidth={3} />
+              </div>
+            )}
+            <AvatarCanvas
+              key={current.id}               /* remonta el canvas al cambiar avatar */
+              modelUrl={current.model}
+              staticModelUrl={current.staticAnim}
+              accentColor={current.color}
+              isSelected={selected === current.id}
+              onTap={handleSelect}
+            />
+            <div className="av-info">
+              <span className="av-gender-tag">{current.gender}</span>
+              <h3 className="av-name">{current.name}</h3>
+              <p className="av-desc">{current.desc}</p>
+            </div>
+          </div>
+
+          <button
+            className="av-arrow"
+            onClick={goNext}
+            disabled={index === filtered.length - 1}
+            aria-label="Siguiente"
+          >
+            <ChevronRight size={22} />
+          </button>
+        </div>
+
+        {/* ── Dots indicadores ── */}
+        <div className="av-dots" style={{ "--av-dot-color": current.color }}>
+          {filtered.map((av, i) => (
             <div
               key={av.id}
-              className={`av-card ${selected === av.id ? "selected" : ""}`}
-              onClick={() => handleSelect(av.id)}
-              style={{ "--av-accent": av.color }}
-            >
-              {selected === av.id && (
-                <div className="av-check">
-                  <Check size={14} strokeWidth={3} />
-                </div>
-              )}
-              <AvatarCanvas
-                modelUrl={av.model}
-                staticModelUrl={av.staticAnim}
-                accentColor={av.color}
-                isSelected={selected === av.id}
-                onTap={() => handleSelect(av.id)} // ← tap desde el overlay del canvas
-              />
-              <div className="av-info">
-                <span className="av-gender-tag">{av.gender}</span>
-                <h3 className="av-name">{av.name}</h3>
-                <p className="av-desc">{av.desc}</p>
-              </div>
-            </div>
+              className={`av-dot ${i === index ? "active" : ""}`}
+              onClick={() => { setIndex(i); vibrateSelect(); }}
+            />
           ))}
         </div>
 
+        {/* ── Botón continuar ── */}
         <button
           className="av-btn"
           onClick={handleContinue}
@@ -542,6 +591,7 @@ export default function AvatarSelect() {
             "Selecciona un avatar para continuar"
           )}
         </button>
+
       </div>
     </div>
   );
