@@ -416,7 +416,7 @@
   }
 
   .av-btn {
-    width: 100%;
+    width: 60%; /* tamaño del botón adaptado a pantallas más pequeñas */
     min-width: unset;
   }
 }
