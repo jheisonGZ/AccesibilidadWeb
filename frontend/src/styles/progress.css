@@ -12,12 +12,12 @@
   content: ""; position: absolute; inset: 0;
   background-image: url("/images/progreso.webp");
   background-size: cover; background-position: center;
-  filter: blur(8px) brightness(0.32);
+  filter: blur(8px) brightness(0.45);
   transform: scale(1.06); z-index: 0;
 }
 .pr-page::after {
   content: ""; position: absolute; inset: 0;
-  background: linear-gradient(160deg,rgba(4,12,22,0.75) 0%,rgba(10,25,40,0.58) 100%);
+  background: rgba(0, 0, 0, 0.45);
   z-index: 1;
 }
 

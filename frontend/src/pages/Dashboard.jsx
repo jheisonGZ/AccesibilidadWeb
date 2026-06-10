@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/dashboard.css";
 import Swal from "sweetalert2";
-import { ClipboardList, User, Globe, BarChart3 } from "lucide-react";
+import { ClipboardList, User, Globe, BarChart3, Trophy } from "lucide-react";
 import { useAuth } from "../providers/AuthProvider";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useFeedback } from "../hooks/useFeedback";
 
@@ -29,39 +29,33 @@ const playSound = (type) => {
       o.stop(ctx.currentTime + startT + dur + 0.05);
     };
 
-    // cristal suave — Do-Mi-Sol agudo
     if (type === "questionnaire") {
       tone("sine", 1046, 0,    0.18, 0.18);
       tone("sine", 1318, 0.04, 0.16, 0.12);
       tone("sine", 1568, 0.08, 0.22, 0.08);
     }
-    // campanilla ascendente — triángulo
     if (type === "avatar") {
       tone("triangle", 880,  0,    0.12, 0.20);
       tone("triangle", 1108, 0.10, 0.12, 0.18);
       tone("triangle", 1320, 0.20, 0.18, 0.14);
     }
-    // portal espacial — sweep + brillo
     if (type === "scene") {
       tone("sawtooth", 110, 0,    0.06, 0.08, 220);
       tone("sine",     440, 0.05, 0.25, 0.12, 880);
       tone("sine",     660, 0.15, 0.20, 0.08, 1320);
       tone("triangle", 220, 0.25, 0.30, 0.06, 880);
     }
-    // fanfarria suave — Do-Mi-Sol-Do arpegiado
     if (type === "progress") {
       tone("sine", 523,  0,    0.22, 0.13);
       tone("sine", 659,  0.09, 0.22, 0.13);
       tone("sine", 784,  0.18, 0.22, 0.13);
       tone("sine", 1046, 0.28, 0.22, 0.13);
     }
-    // acorde zen — 528Hz armónico
     if (type === "confirm") {
       tone("sine", 528,  0,    0.30, 0.12);
       tone("sine", 792,  0.02, 0.30, 0.10);
       tone("sine", 1056, 0.04, 0.30, 0.07);
     }
-    // bump grave original — señal de rechazo
     if (type === "blocked") {
       tone("sine", 220, 0,    0.12, 0.12);
       tone("sine", 180, 0.13, 0.15, 0.10);
@@ -71,6 +65,34 @@ const playSound = (type) => {
   } catch (_) {}
 };
 
+// Deriva color, label y sub directamente del conteo — sin helper externo
+function getTrophy(count) {
+  if (count >= 4) return { color: "#AFA9EC", bg: "rgba(127,119,221,0.2)",  label: "Maestro del bienestar", sub: "Todos los logros desbloqueados" };
+  if (count >= 3) return { color: "#FFD700", bg: "rgba(255,215,0,0.13)",   label: "Oro",                   sub: "Casi completo" };
+  if (count >= 2) return { color: "#c0c0c0", bg: "rgba(192,192,192,0.15)", label: "Plata",                 sub: "Vas por buen camino" };
+  if (count >= 1) return { color: "#cd7f32", bg: "rgba(205,127,50,0.15)",  label: "Bronce",                sub: "Primer logro desbloqueado" };
+  return           { color: "rgba(255,255,255,0.18)", bg: "rgba(255,255,255,0.05)", label: "Sin logros aun", sub: "Explora los escenarios para desbloquear" };
+}
+
+function TrophyFooter({ achievements }) {
+  const count  = achievements.length;
+  const trophy = getTrophy(count);
+  return (
+    <div className="trophy-block">
+      <div className="trophy-icon" style={{ background: trophy.bg }}>
+        <Trophy size={18} color={trophy.color} strokeWidth={1.8} />
+      </div>
+      <div>
+        <span className="trophy-name" style={{ color: trophy.color }}>{trophy.label}</span>
+        <span className="trophy-badge" style={{ color: trophy.color, borderColor: trophy.bg }}>
+          {count} / 4
+        </span>
+        <p className="trophy-sub">{trophy.sub}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { alias, user } = useAuth();
   const navigate = useNavigate();
@@ -78,6 +100,7 @@ export default function Dashboard() {
 
   const [questionnaireCompleted, setQuestionnaireCompleted] = useState(false);
   const [avatarSelected, setAvatarSelected]                 = useState(false);
+  const [achievements, setAchievements]                     = useState([]);
   const [loadingState, setLoadingState]                     = useState(true);
   const [backgroundLoaded, setBackgroundLoaded]             = useState(false);
 
@@ -92,21 +115,23 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return;
-    const fetchState = async () => {
-      try {
-        const snap = await getDoc(doc(db, "users", user.uid));
+    const unsub = onSnapshot(
+      doc(db, "users", user.uid),
+      (snap) => {
         if (snap.exists()) {
           const data = snap.data();
           setQuestionnaireCompleted(!!data.lastEmotion);
           setAvatarSelected(!!data.avatar);
+          setAchievements(data.achievements ?? []);
         }
-      } catch (e) {
+        setLoadingState(false);
+      },
+      (e) => {
         console.error("Error leyendo estado del usuario:", e);
-      } finally {
         setLoadingState(false);
       }
-    };
-    fetchState();
+    );
+    return () => unsub();
   }, [user]);
 
   if (!backgroundLoaded || loadingState) {
@@ -294,9 +319,9 @@ export default function Dashboard() {
 
         </div>
 
-        <p className="dashboard-footer">
-          Aquí aparecerán recomendaciones y tu historial.
-        </p>
+        <div className="dashboard-footer">
+          <TrophyFooter achievements={achievements} />
+        </div>
 
       </div>
     </div>

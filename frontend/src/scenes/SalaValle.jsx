@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { auth, db } from "../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
-import { StressRoomProvider } from "../context/StressRoomContext";
+import { SalaValleProvider } from "../context/SalaValleContext";
 
 import MobileControlsOverlay from "../components/3d/mobile/MobileControlsOverlay";
 import RotatePrompt from "../components/3d/mobile/RotatePrompt";
@@ -10,7 +10,7 @@ import RotatePrompt from "../components/3d/mobile/RotatePrompt";
 import { useMobileControls } from "../components/3d/mobile/useMobileControls";
 import { useLandscapeLock } from "../components/3d/mobile/useLandscapeLock";
 
-function StressRoomInner() {
+function SalaValleInner() {
   const [avatarId, setAvatarId] = useState("male-1");
   const [isMobile, setIsMobile] = useState(false);
 
@@ -74,10 +74,10 @@ function StressRoomInner() {
   );
 }
 
-export default function StressRoomScene(props) {
+export default function SalaValleScene(props) {
   return (
-    <StressRoomProvider>
-      <StressRoomInner {...props} />
-    </StressRoomProvider>
+    <SalaValleProvider>
+      <SalaValleInner {...props} />
+    </SalaValleProvider>
   );
 }

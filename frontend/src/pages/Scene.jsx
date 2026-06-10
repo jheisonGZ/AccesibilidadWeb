@@ -6,14 +6,27 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { doc, getDoc, collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
-import AnxietyRoom from "../scenes/AnxietyRoom";
-import BasicRoom   from "../scenes/BasicRoom";
-import NeutralRoom from "../scenes/NeutralRoom";
+import SalaIsla from "../scenes/SalaIsla";
+import SalaPlaya   from "../scenes/SalaPlaya";
+import SalaBosque   from "../scenes/SalaBosque";
+import SalaValle from "../scenes/SalaValle";
 import { usePageReady } from "../providers/NavigationContext";
 import { useAuth } from "../providers/AuthProvider";
 import {
-  LayoutDashboard, LogOut, Heart, AlertTriangle, AlertCircle,
-  Activity, TrendingUp, TrendingDown, Minus, Star, Zap, CircleHelp
+  LayoutDashboard,
+  LogOut,
+  Heart,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Star,
+  Zap,
+  CircleHelp,
+
+  Trees,
+  Waves,
+  Mountain,
+  Palmtree,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import "../styles/scene.css";
@@ -22,18 +35,45 @@ import HelpModal from "../components/HelpModal";
 // ── Mapas de datos ────────────────────────────────────────────────────────────
 
 const EMOTION_MAP = {
-  neutro:   { Icon: Heart,         color: "#00eaff", glow: "#00eaff", label: "ESTABLE",  level: 1 },
-  leve:     { Icon: Activity,      color: "#00ff88", glow: "#00ff88", label: "LEVE",      level: 2 },
-  estres:   { Icon: AlertTriangle, color: "#ffcc00", glow: "#ffcc00", label: "ESTRÉS",    level: 3 },
-  ansiedad: { Icon: AlertCircle,   color: "#ff4466", glow: "#ff4466", label: "ANSIEDAD",  level: 4 },
+  neutro: {
+    Icon: Trees,
+    color: "#22c55e",
+    glow: "#22c55e",
+    label: "BOSQUE DE LA CALMA",
+    level: 1,
+  },
+
+  leve: {
+    Icon: Waves,
+    color: "#38bdf8",
+    glow: "#38bdf8",
+    label: "PLAYA DE LA SERENIDAD",
+    level: 2,
+  },
+
+  estres: {
+    Icon: Mountain,
+    color: "#f59e0b",
+    glow: "#f59e0b",
+    label: "VALLE ESCONDIDO",
+    level: 3,
+  },
+
+  ansiedad: {
+    Icon: Palmtree,
+    color: "#a855f7",
+    glow: "#a855f7",
+    label: "ISLA DE LAS ESTRELLAS",
+    level: 4,
+  },
 };
 
 /** Audio ambiental por emoción — null = sin audio */
 const EMOTION_AUDIO = {
-  neutro:   "/sounds/naturaleza.wav",
-  leve:     "/sounds/naturaleza.wav",
-  estres:   "/sounds/naturaleza.wav",
-  ansiedad: "/sounds/naturaleza.wav",
+  neutro:   "/sounds/naturaleza.wav",  // 🌲 Bosque
+  leve:     "/sounds/playa.wav",       // 🏖️ Playa
+  estres:   "/sounds/valle.wav",       // 🏔️ Valle
+  ansiedad: "/sounds/isla.wav",        // 🏝️ Isla
 };
 
 const AUDIO_VOLUME = 0.11;
@@ -222,9 +262,12 @@ export default function Scene() {
 
   if (loading) return <div style={{ background: "#080e08", height: "100vh" }} />;
 
-  const SceneComponent =
-    emotion === "ansiedad" ? AnxietyRoom :
-    emotion === "estres"   ? BasicRoom   : NeutralRoom;
+// DESPUÉS — cada emoción va a su sala correcta
+const SceneComponent =
+  emotion === "ansiedad" ? SalaIsla  :
+  emotion === "estres"   ? SalaValle :
+  emotion === "leve"     ? SalaPlaya :
+                           SalaBosque;
 
   const emo       = EMOTION_MAP[emotion] || EMOTION_MAP.neutro;
   const trend     = getTrend(lastScore);

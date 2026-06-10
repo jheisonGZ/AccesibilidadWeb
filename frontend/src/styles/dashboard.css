@@ -37,15 +37,12 @@
 }
 
 /* Capa 2: overlay */
+/* Capa 2: overlay */
 .dashboard-page::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(5, 15, 25, 0.55) 0%,
-    rgba(5, 15, 25, 0.25) 100%
-  );
+  background: rgba(0, 0, 0, 0.45);
   z-index: 1;
 }
 
@@ -73,7 +70,6 @@
   padding-left: 14px;
 }
 
-/* Avatar redondo */
 .dashboard-avatar {
   width: 44px;
   height: 44px;
@@ -221,13 +217,49 @@
 }
 
 /* ===============================
-   FOOTER
+   FOOTER — COPA DE LOGROS
    =============================== */
 
 .dashboard-footer {
   margin-top: 20px;
-  opacity: 0.45;
-  font-size: 0.82rem;
+}
+
+.trophy-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trophy-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.4s ease;
+}
+
+.trophy-name {
+  font-size: 12px;
+  font-weight: 700;
+  margin-right: 6px;
+  transition: color 0.4s ease;
+}
+
+.trophy-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid;
+  opacity: 0.85;
+}
+
+.trophy-sub {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 2px;
 }
 
 /* ===============================

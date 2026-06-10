@@ -11,23 +11,44 @@ import { doc, getDoc } from "firebase/firestore";
 // Debe coincidir exactamente con los IDs del array AVATARS en AvatarSelect.
 // =============================================================================
 const AVATAR_MODELS = {
-  "male-1":   { model: "/models/hombre2.glb", idle: "/models/animations/estatico.glb"  },
-  "female-1": { model: "/models/mujer2.glb",  idle: "/models/animations/estatica.glb"  },
-  "male-2":   { model: "/models/hombre.glb",  idle: "/models/animations/estatico.glb"  },
-  "female-2": { model: "/models/mujer.glb",   idle: "/models/animations/estatica.glb"  },
+  "male-1":   { model: "/models/hombre2.glb",     idle: "/models/animations/estatico.glb" },
+  "female-1": { model: "/models/mujer2.glb",       idle: "/models/animations/estatica.glb" },
+  "male-2":   { model: "/models/hombre.glb",       idle: "/models/animations/estatico.glb" },
+  "female-2": { model: "/models/mujer.glb",        idle: "/models/animations/estatica.glb" },
+  "male-3":   { model: "/models/hombre3.glb",      idle: "/models/animations/estatico.glb" },
+  "female-3": { model: "/models/mujer3.glb",       idle: "/models/animations/estatica.glb" },
+  "nb-1":     { model: "/models/no_binaria.glb",   idle: "/models/animations/estatica.glb" },
 };
 
 // Fallback: si el ID guardado no existe en el mapa, usa este avatar
 const FALLBACK = AVATAR_MODELS["male-2"];
 
 // =============================================================================
-// PlayerController
-// Componente raíz. Su única responsabilidad es:
-//   1. Leer qué avatar eligió el usuario (localStorage → Firestore)
-//   2. Pasar las rutas correctas a AvatarScene
-//   3. Forzar remontaje de AvatarScene cuando cambia el modelo (key=)
+// CONFIGURACIÓN POR SALA — aquí están los valores por defecto del bosque.
+// En cada sala puedes sobreescribir startPosition y floorY como props.
+//
+// 🌲 SalaBosque → NO pasar nada, usa los defaults de abajo. ✅ NO TOCAR
+//    <PlayerController controls={mobileControls} />
+//
+// 🏖️ SalaPlaya → ajusta Y hasta que el personaje quede sobre el piso.
+//    <PlayerController controls={mobileControls} startPosition={[0, -0.9, 5.3]} floorY={-0.9} />
+//    Si flota: baja ambos Y (ej: -1.2). Si se hunde: súbelos (ej: -0.5).
+//
+// 🏝️ SalaIsla → ajusta Y hasta que el personaje quede sobre el piso.
+//    <PlayerController controls={mobileControls} startPosition={[0, -2, 0]} floorY={-2} />
+//    Si flota: baja ambos Y. Si se hunde: súbelos.
+//
+// 🏔️ SalaValle → ajusta Y hasta que el personaje quede sobre el piso.
+//    <PlayerController controls={mobileControls} startPosition={[0, -2, 0]} floorY={-2} />
+//    Si flota: baja ambos Y. Si se hunde: súbelos.
+//
+// REGLA: startPosition[1] y floorY siempre deben ser el mismo número.
 // =============================================================================
-export default function PlayerController({ controls }) {
+export default function PlayerController({
+  controls,
+  startPosition = [0, 1, 5.5],  // 🌲 Bosque — NO cambiar este default
+  floorY        = -2,            // 🌲 Bosque — NO cambiar este default
+}) {
 
   // Inicializar desde localStorage para evitar flash del modelo incorrecto
   // mientras se resuelve la llamada a Firestore.
@@ -60,6 +81,8 @@ export default function PlayerController({ controls }) {
       key={avatarPaths.model}
       paths={avatarPaths}
       controls={controls}
+      startPosition={startPosition}
+      floorY={floorY}
     />
   );
 }
@@ -71,7 +94,7 @@ export default function PlayerController({ controls }) {
 // Las animaciones de caminar, correr y saltar son compartidas por todos
 // los avatares, por eso siguen siendo rutas fijas.
 // =============================================================================
-function AvatarScene({ paths, controls }) {
+function AvatarScene({ paths, controls, startPosition, floorY }) {
 
   const group = useRef();
   const { camera } = useThree();
@@ -127,6 +150,15 @@ function AvatarScene({ paths, controls }) {
     const idleAction = Object.values(idle.actions || {})[0];
     if (idleAction) idleAction.play();
   }, [idle]);
+
+  // ── Aplicar posición inicial una sola vez al montar ─────────────────────
+  // Se usa el ref del grupo para setear directamente sobre el objeto 3D,
+  // evitando re-renders. [] garantiza que solo corre al montar.
+  useEffect(() => {
+    if (group.current) {
+      group.current.position.set(...startPosition);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Loop principal (60fps) ───────────────────────────────────────────────
   useFrame(() => {
@@ -263,11 +295,13 @@ function AvatarScene({ paths, controls }) {
     }
 
     // ── Gravedad y colisión con el piso ──────────────────────────────────
+    // floorY viene de la prop del mismo nombre.
+    // Cada sala define su propio piso pasando floorY al PlayerController.
     velocityY.current -= 0.008;
     group.current.position.y += velocityY.current;
 
-    if (group.current.position.y <= -2) {
-      group.current.position.y = -2;
+    if (group.current.position.y <= floorY) {
+      group.current.position.y = floorY;
       velocityY.current = 0;
 
       // Al aterrizar: cancelar estado de salto y limpiar callbacks
@@ -299,7 +333,6 @@ function AvatarScene({ paths, controls }) {
       ref={group}
       object={model.scene}
       scale={0.6}
-      position={[0, 1, 5.5]}  // Posición inicial del avatar
     />
   );
 }

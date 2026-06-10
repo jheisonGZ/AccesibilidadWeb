@@ -33,9 +33,9 @@
 }
 .q-page::after {
   content: "";
-  position: fixed;              /* ← igual, fixed para que no se mueva */
+  position: fixed;
   inset: 0;
-  background: linear-gradient(160deg, rgba(5,15,25,0.72) 0%, rgba(15,32,47,0.55) 100%);
+  background: rgba(0, 0, 0, 0.45);
   z-index: 1;
 }
 .q-container {

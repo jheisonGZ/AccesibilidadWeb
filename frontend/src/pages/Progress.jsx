@@ -17,10 +17,13 @@ import "../styles/progress.css";
 Chart.register(...registerables);
 
 const AVATARS = [
-  { id: "male-1",   name: "Alejandro", color: "#93c5fd", model: "/models/hombre2.glb",  staticAnim: "/models/animations/estatico.glb" },
-  { id: "female-1", name: "Valentina", color: "#f9a8d4", model: "/models/mujer2.glb",   staticAnim: "/models/animations/estatica.glb" },
-  { id: "male-2",   name: "Sebastian", color: "#6ee7b7", model: "/models/hombre.glb",   staticAnim: "/models/animations/estatico.glb" },
-  { id: "female-2", name: "Katerin",   color: "#fcd34d", model: "/models/mujer.glb",    staticAnim: "/models/animations/estatica.glb" },
+  { id: "male-1",   name: "Alejandro", color: "#93c5fd", model: "/models/hombre2.glb",    staticAnim: "/models/animations/estatico.glb" },
+  { id: "female-1", name: "Valentina", color: "#f9a8d4", model: "/models/mujer2.glb",     staticAnim: "/models/animations/estatica.glb" },
+  { id: "male-2",   name: "Sebastian", color: "#6ee7b7", model: "/models/hombre.glb",     staticAnim: "/models/animations/estatico.glb" },
+  { id: "female-2", name: "Katerin",   color: "#fcd34d", model: "/models/mujer.glb",      staticAnim: "/models/animations/estatica.glb" },
+  { id: "male-3",   name: "Mateo",     color: "#86efac", model: "/models/hombre3.glb",    staticAnim: "/models/animations/estatico.glb" },
+  { id: "female-3", name: "Isabela",   color: "#f0abfc", model: "/models/mujer3.glb",     staticAnim: "/models/animations/estatica.glb" },
+  { id: "nb-1",     name: "Camilo",    color: "#fbbf24", model: "/models/no_binaria.glb", staticAnim: "/models/animations/estatica.glb" },
 ];
 
 const CLASSIFY = {
