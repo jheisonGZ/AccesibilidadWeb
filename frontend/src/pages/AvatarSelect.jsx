@@ -94,7 +94,7 @@ const AVATARS = [
   },
   {
     id: "female-2",
-    name: "Katerin",
+    name: "Khaterin",
     gender: "Femenino",
     desc: "Reflexiva y lista para aprender.",
     color: "#fcd34d",
@@ -121,7 +121,7 @@ const AVATARS = [
   },
   {
     id: "nb-1",
-    name: "Camilo",
+    name: "Cami",
     gender: "No binario",
     desc: "Libre, autentico y curioso.",
     color: "#fbbf24",

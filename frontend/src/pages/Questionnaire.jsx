@@ -205,12 +205,7 @@ export default function Questionnaire() {
         lastUpdated: serverTimestamp(),
       }, { merge: true });
 
-      await Swal.fire({
-        icon: "success", title: result.label,
-        html: `Tu puntaje fue <b>${score} / ${MAX_SCORE}</b>.<br/>${result.desc}`,
-        confirmButtonText: "Elegir avatar", confirmButtonColor: "#2c5364",
-        background: "#0f2027", color: "#fff", iconColor: result.color,
-      });
+      
 
       navigate("/home/avatar", "Preparando tu avatar");
 

@@ -1,11 +1,13 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    scene.hud.css — src/styles/scene.hud.css
-   Estilos del HUD estilo videojuego para Scene.jsx
+   HUD rediseñado — estilo videojuego, compacto en móvil
 ───────────────────────────────────────────────────────────────────────────── */
 
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
 
-/* ── PANEL BASE ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   PANEL BASE — DESKTOP
+═══════════════════════════════════════════════════════════════════════════ */
 .hud-panel {
   position: absolute;
   z-index: 20;
@@ -19,7 +21,6 @@
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
 }
 
-/* Línea decorativa superior */
 .hud-panel::before {
   content: '';
   position: absolute;
@@ -28,7 +29,6 @@
   background: linear-gradient(90deg, transparent, rgba(0,220,255,0.6), transparent);
 }
 
-/* Esquina decorativa inferior derecha */
 .hud-panel::after {
   content: '';
   position: absolute;
@@ -38,7 +38,6 @@
   border-right:  1px solid rgba(0,200,255,0.4);
 }
 
-/* Posiciones */
 .hud-tl { top: 16px; left: 16px; }
 .hud-tr { top: 16px; right: 16px; text-align: right; }
 
@@ -235,6 +234,7 @@
   cursor: pointer;
   transition: all 0.15s ease;
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  background: transparent;
 }
 
 .hud-btn-primary {
@@ -263,18 +263,27 @@
   color: #fff;
 }
 
-/* =============================================================================
-   RESPONSIVE MÓVIL — HUD compacto tipo píldora
-============================================================================= */
+/* ═══════════════════════════════════════════════════════════════════════════
+   MÓVIL (≤ 768px) — REDISEÑO COMPLETO
+   Barra superior delgada de extremo a extremo:
+   izquierda = jugador · derecha = zona + botones (solo íconos)
+═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
+
   .hud-panel {
-    padding: 6px 10px;
-    min-width: 0;
-    max-width: 48vw;
-    border-radius: 99px;
+    position: fixed;
+    top: 0;
+    background: linear-gradient(180deg, rgba(0,10,18,0.92) 0%, rgba(0,10,18,0.55) 100%);
+    border: none;
+    border-radius: 0;
     clip-path: none;
-    display: flex;
-    align-items: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 8px 10px;
+    min-width: 0;
+    width: 50%;
+    box-shadow: none;
+    box-sizing: border-box;
   }
 
   .hud-panel::before,
@@ -282,20 +291,28 @@
     display: none;
   }
 
-  .hud-tl { top: 8px; left: 8px; }
-  .hud-tr { top: 8px; right: 8px; }
+  /* ── Panel izquierdo: jugador ── */
+  .hud-tl {
+    left: 0;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(0,200,255,0.15);
+    border-right: 1px solid rgba(0,200,255,0.10);
+  }
 
-  /* ── Panel jugador: solo avatar + nombre ── */
   .hud-player-header {
     margin-bottom: 0;
     padding-bottom: 0;
     border-bottom: none;
     gap: 8px;
+    width: 100%;
   }
 
-  .hud-avatar { width: 28px; height: 28px; }
-  .hud-initial { font-size: 12px; }
-  .hud-level-badge { width: 11px; height: 11px; font-size: 6px; }
+  .hud-avatar { width: 30px; height: 30px; }
+  .hud-initial { font-size: 13px; }
+  .hud-level-badge { width: 12px; height: 12px; font-size: 7px; }
+
+  .hud-player-info { min-width: 0; flex: 1; }
 
   .hud-callsign {
     font-size: 11px;
@@ -303,7 +320,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 32vw;
   }
 
   .hud-status {
@@ -313,86 +329,89 @@
   }
   .hud-dot { width: 4px; height: 4px; }
 
-  /* Ocultar barras de bienestar/EXP por defecto en móvil */
+  /* Ocultar barras de bienestar/EXP en móvil */
   .hud-bar-row { display: none; }
 
-  /* ── Panel derecho: solo zona activa, compacta ── */
+  /* ── Panel derecho: zona + botones ── */
+  .hud-tr {
+    right: 0;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    border-bottom: 1px solid rgba(0,200,255,0.15);
+    border-left: 1px solid rgba(0,200,255,0.10);
+  }
+
   .hud-zone {
     border: none;
     background: transparent;
     padding: 0;
     margin-bottom: 0;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
   }
   .hud-zone-title { display: none; }
   .hud-zone-name {
     font-size: 11px;
     letter-spacing: 1px;
+    justify-content: flex-start;
     gap: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  /* Ocultar score y mostrar solo botones */
   .hud-score-row { display: none; }
 
-  .hud-actions { gap: 4px; }
-  .hud-btn {
-    padding: 5px 8px;
-    font-size: 10px;
-    letter-spacing: 0.5px;
-    gap: 3px;
-    clip-path: none;
-    border-radius: 99px;
-  }
-
-  /* En el panel derecho: zona arriba, botones abajo en columna compacta */
-  .hud-tr {
-    flex-direction: column;
-    align-items: flex-end;
+  .hud-actions {
     gap: 4px;
-    display: flex;
-    background: transparent;
-    border: none;
-    backdrop-filter: none;
-    padding: 0;
+    flex-shrink: 0;
   }
 
-  .hud-tr .hud-zone,
-  .hud-tr .hud-actions {
-    background: linear-gradient(135deg, rgba(0,8,16,0.82) 0%, rgba(0,16,28,0.75) 100%);
-    border: 1px solid rgba(0,200,255,0.18);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-radius: 99px;
-    padding: 6px 10px;
+  /* Botones reducidos a íconos circulares */
+  .hud-btn {
+    padding: 0;
+    font-size: 0;
+    gap: 0;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    justify-content: center;
+    align-items: center;
+    clip-path: none;
   }
+  .hud-btn svg { flex-shrink: 0; }
 }
 
-/* =============================================================================
-   MÓVIL MUY PEQUEÑO (≤480px)
-============================================================================= */
+/* ═══════════════════════════════════════════════════════════════════════════
+   MÓVIL MUY PEQUEÑO (≤ 480px)
+═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 480px) {
-  .hud-tl, .hud-tr { max-width: 46vw; }
+  .hud-avatar { width: 26px; height: 26px; }
+  .hud-initial { font-size: 11px; }
+  .hud-callsign { font-size: 10px; }
+  .hud-zone-name { font-size: 10px; }
+  .hud-btn { width: 26px; height: 26px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MÓVIL LANDSCAPE — barra aún más delgada
+═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) and (orientation: landscape) {
+  .hud-panel { padding: 5px 8px; }
 
   .hud-avatar { width: 24px; height: 24px; }
-  .hud-initial { font-size: 11px; }
-  .hud-callsign { font-size: 10px; max-width: 28vw; }
+  .hud-initial { font-size: 10px; }
+  .hud-level-badge { width: 10px; height: 10px; font-size: 6px; }
 
-  .hud-zone-name { font-size: 10px; }
+  .hud-callsign { font-size: 9px; }
+  .hud-status { display: none; }
 
-  .hud-btn {
-    padding: 4px 7px;
-    font-size: 9px;
-  }
-}
-
-/* =============================================================================
-   MÓVIL LANDSCAPE
-============================================================================= */
-@media (max-width: 768px) and (orientation: landscape) {
-  .hud-tl { top: 6px; left: 6px; max-width: 40vw; }
-  .hud-tr { top: 6px; right: 6px; max-width: 40vw; }
-
-  .hud-avatar { width: 22px; height: 22px; }
-  .hud-callsign { font-size: 9px; max-width: 26vw; }
   .hud-zone-name { font-size: 9px; }
-  .hud-btn { padding: 3px 6px; font-size: 8px; }
+
+  .hud-btn { width: 22px; height: 22px; }
+  .hud-btn svg { width: 12px; height: 12px; }
 }
