@@ -521,9 +521,13 @@
   z-index: 9999;
 }
 
+
 .q-result-actions .q-btn-back {
   font-size: 0.95rem;
   font-weight: 700;
+    padding: 13px 28px;
+  border-radius: 12px;
+  
 }
 
 .q-btn-submit {
