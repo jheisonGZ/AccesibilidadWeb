@@ -4,12 +4,6 @@ import { useGLTF, useAnimations } from "@react-three/drei";
 import { auth, db } from "../../../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
-// =============================================================================
-// MAPA DE AVATARES
-// Relaciona cada avatar ID (guardado en Firestore/localStorage)
-// con su modelo .glb y su animación idle correspondiente.
-// Debe coincidir exactamente con los IDs del array AVATARS en AvatarSelect.
-// =============================================================================
 const AVATAR_MODELS = {
   "male-1":   { model: "/models/hombre2.glb",     idle: "/models/animations/estatico.glb" },
   "female-1": { model: "/models/mujer2.glb",       idle: "/models/animations/estatica.glb" },
@@ -20,46 +14,39 @@ const AVATAR_MODELS = {
   "nb-1":     { model: "/models/no_binaria.glb",   idle: "/models/animations/estatica.glb" },
 };
 
-// Fallback: si el ID guardado no existe en el mapa, usa este avatar
 const FALLBACK = AVATAR_MODELS["male-2"];
 
 // =============================================================================
-// CONFIGURACIÓN POR SALA — aquí están los valores por defecto del bosque.
-// En cada sala puedes sobreescribir startPosition y floorY como props.
+// CONFIGURACIÓN POR SALA
 //
-// 🌲 SalaBosque → NO pasar nada, usa los defaults de abajo. ✅ NO TOCAR
+// 🌲 SalaBosque → NO pasar nada. ✅ NO TOCAR
 //    <PlayerController controls={mobileControls} />
 //
-// 🏖️ SalaPlaya → ajusta Y hasta que el personaje quede sobre el piso.
+// 🏖️ SalaPlaya
 //    <PlayerController controls={mobileControls} startPosition={[0, -0.9, 5.3]} floorY={-0.9} />
-//    Si flota: baja ambos Y (ej: -1.2). Si se hunde: súbelos (ej: -0.5).
 //
-// 🏝️ SalaIsla → ajusta Y hasta que el personaje quede sobre el piso.
+// 🏝️ SalaIsla
 //    <PlayerController controls={mobileControls} startPosition={[0, -2, 0]} floorY={-2} />
-//    Si flota: baja ambos Y. Si se hunde: súbelos.
 //
-// 🏔️ SalaValle → ajusta Y hasta que el personaje quede sobre el piso.
-//    <PlayerController controls={mobileControls} startPosition={[0, -2, 0]} floorY={-2} />
-//    Si flota: baja ambos Y. Si se hunde: súbelos.
+// 🏔️ SalaValle
+//    <PlayerController controls={mobileControls} startPosition={[0, -2, 5]} floorY={1} playerRef={playerRef} />
 //
 // REGLA: startPosition[1] y floorY siempre deben ser el mismo número.
 // =============================================================================
 export default function PlayerController({
   controls,
-  startPosition = [0, 1, 5.5],  // 🌲 Bosque — NO cambiar este default
-  floorY        = -2,            // 🌲 Bosque — NO cambiar este default
+  startPosition = [0, 1, 5.5],
+  floorY        = -2,
+  playerRef,
+  limites,
+  avatarScale = 0.8,
 }) {
 
-  // Inicializar desde localStorage para evitar flash del modelo incorrecto
-  // mientras se resuelve la llamada a Firestore.
   const [avatarPaths, setAvatarPaths] = useState(() => {
     const saved = localStorage.getItem("avatar");
     return AVATAR_MODELS[saved] ?? FALLBACK;
   });
 
-  // Confirmar con Firestore (fuente de verdad) al montar el componente.
-  // Si Firestore devuelve un ID distinto al de localStorage, actualiza el estado
-  // y sincroniza localStorage para la próxima carga.
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -73,49 +60,37 @@ export default function PlayerController({
     });
   }, []);
 
-  // key=avatarPaths.model garantiza que si las rutas cambian,
-  // React desmonta y remonta AvatarScene desde cero,
-  // evitando que Three.js mezcle meshes de modelos distintos.
-  return (
+return (
     <AvatarScene
       key={avatarPaths.model}
       paths={avatarPaths}
       controls={controls}
       startPosition={startPosition}
       floorY={floorY}
+      playerRef={playerRef}
+      limites={limites}
+      avatarScale={avatarScale}
     />
   );
 }
 
-// =============================================================================
-// AvatarScene
-// Contiene toda la lógica de movimiento, animaciones y cámara.
-// Recibe `paths` con las rutas del modelo e idle del avatar seleccionado.
-// Las animaciones de caminar, correr y saltar son compartidas por todos
-// los avatares, por eso siguen siendo rutas fijas.
-// =============================================================================
-function AvatarScene({ paths, controls, startPosition, floorY }) {
+function AvatarScene({ paths, controls, startPosition, floorY, playerRef, limites, avatarScale }) {
 
-  const group = useRef();
+  const localRef = useRef();
+  const group    = playerRef ?? localRef;
   const { camera } = useThree();
 
-  // ── Carga del modelo y animaciones ──────────────────────────────────────
-  // paths.model y paths.idle vienen del avatar elegido por el usuario.
-  // Las demás animaciones son iguales para todos los avatares.
   const model         = useGLTF(paths.model);
   const idleAnimation = useGLTF(paths.idle);
   const walkAnimation = useGLTF("/models/animations/caminar.glb");
   const runAnimation  = useGLTF("/models/animations/correr.glb");
   const jumpAnimation = useGLTF("/models/animations/saltar.glb");
 
-  // Conectar cada clip de animación al grupo del modelo
   const idle = useAnimations(idleAnimation.animations, group);
   const walk = useAnimations(walkAnimation.animations, group);
   const run  = useAnimations(runAnimation.animations,  group);
   const jump = useAnimations(jumpAnimation.animations, group);
 
-  // ── Referencias de estado ────────────────────────────────────────────────
-  // Se usan refs en lugar de useState para no provocar re-renders en el loop.
   const keys             = useRef({});
   const movingRef        = useRef(false);
   const isRunningRef     = useRef(false);
@@ -125,7 +100,6 @@ function AvatarScene({ paths, controls, startPosition, floorY }) {
   const jumpConsumed     = useRef(false);
   const jumpFinishedCb   = useRef(null);
 
-  // ── Escuchar teclado ─────────────────────────────────────────────────────
   useEffect(() => {
     const down = (e) => {
       const key = e.code === "Space" ? "space" : e.key.toLowerCase();
@@ -143,37 +117,35 @@ function AvatarScene({ paths, controls, startPosition, floorY }) {
     };
   }, []);
 
-  // ── Reproducir idle al montar ────────────────────────────────────────────
-  // Se dispara una sola vez cuando el componente monta y las acciones
-  // de animación ya están listas.
   useEffect(() => {
     const idleAction = Object.values(idle.actions || {})[0];
     if (idleAction) idleAction.play();
   }, [idle]);
 
-  // ── Aplicar posición inicial una sola vez al montar ─────────────────────
-  // Se usa el ref del grupo para setear directamente sobre el objeto 3D,
-  // evitando re-renders. [] garantiza que solo corre al montar.
+  useEffect(() => {
+  model.scene.traverse((obj) => {
+    if (obj.isMesh) {
+      obj.castShadow    = true;
+      obj.receiveShadow = true;
+    }
+  });
+}, [model.scene]);
+
+
   useEffect(() => {
     if (group.current) {
       group.current.position.set(...startPosition);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Loop principal (60fps) ───────────────────────────────────────────────
   useFrame(() => {
     if (!group.current) return;
 
-    // Booleano estricto: evita que undefined rompa comparaciones
     const isRunning = !!(keys.current["shift"] || controls?.current?.run);
-
-    // Velocidad según si está corriendo o caminando
     const vel  = isRunning ? 0.1 : 0.05;
     let moving = false;
 
-    // ── Detectar salto ───────────────────────────────────────────────────
     const jumpPressed = keys.current["space"] || controls?.current?.jump;
-    // Resetear jumpConsumed cuando se suelta la tecla, para permitir saltar de nuevo
     if (!jumpPressed) jumpConsumed.current = false;
     if (jumpPressed && !isJumping.current && !jumpConsumed.current) {
       velocityY.current    = 0.15;
@@ -187,7 +159,6 @@ function AvatarScene({ paths, controls, startPosition, floorY }) {
     const runAction  = Object.values(run.actions  || {})[0];
     const jumpAction = Object.values(jump.actions || {})[0];
 
-    // ── Movimiento WASD ──────────────────────────────────────────────────
     if (keys.current["w"]) {
       group.current.position.z -= vel;
       group.current.rotation.y = Math.PI;
@@ -209,7 +180,6 @@ function AvatarScene({ paths, controls, startPosition, floorY }) {
       moving = true;
     }
 
-    // ── Joystick móvil ───────────────────────────────────────────────────
     if (move && (Math.abs(move.x) > 0.1 || Math.abs(move.y) > 0.1)) {
       group.current.position.x += move.x * vel;
       group.current.position.z -= move.y * vel;
@@ -221,21 +191,18 @@ function AvatarScene({ paths, controls, startPosition, floorY }) {
       }
     }
 
-    // ── Límites del escenario ────────────────────────────────────────────
-    const borde = 100;
-    group.current.position.x = Math.max(-borde, Math.min(borde, group.current.position.x));
-    group.current.position.z = Math.max(-borde, Math.min(borde, group.current.position.z));
+    const xMin = limites?.xMin ?? -100;
+    const xMax = limites?.xMax ??  100;
+    const zMin = limites?.zMin ?? -100;
+    const zMax = limites?.zMax ??  100;
+    group.current.position.x = Math.max(xMin, Math.min(xMax, group.current.position.x));
+    group.current.position.z = Math.max(zMin, Math.min(zMax, group.current.position.z));
 
-    // ── Lógica de animaciones ────────────────────────────────────────────
-    // Solo recalcula cuando el estado de movimiento o sprint cambia,
-    // no en cada frame, para evitar transiciones continuas.
     const estadoCambio =
       moving    !== movingRef.current ||
       isRunning !== isRunningRef.current;
 
     if (isJumping.current) {
-      // El salto tiene prioridad sobre cualquier otra animación.
-      // Solo inicia la transición una vez (cuando currentAnimation no es "jump").
       if (currentAnimation.current !== "jump") {
         currentAnimation.current = "jump";
         idleAction?.fadeOut(0.1);
@@ -246,12 +213,10 @@ function AvatarScene({ paths, controls, startPosition, floorY }) {
           jumpAction.reset().setEffectiveTimeScale(1.8).fadeIn(0.1).play();
           jumpAction.clampWhenFinished = true;
 
-          // Limpiar listener anterior para evitar callbacks duplicados
           if (jumpFinishedCb.current) {
             jumpAction._mixer.removeEventListener("finished", jumpFinishedCb.current);
           }
 
-          // Cuando termina la animación de salto, volver a idle
           jumpFinishedCb.current = () => {
             if (currentAnimation.current !== "jump") return;
             currentAnimation.current = "idle";
@@ -264,12 +229,10 @@ function AvatarScene({ paths, controls, startPosition, floorY }) {
       }
 
     } else if (estadoCambio) {
-      // Actualizar refs para la próxima comparación
       movingRef.current    = moving;
       isRunningRef.current = isRunning;
 
       if (moving && isRunning && currentAnimation.current !== "run") {
-        // Transición a correr
         currentAnimation.current = "run";
         idleAction?.fadeOut(0.2);
         walkAction?.fadeOut(0.2);
@@ -277,7 +240,6 @@ function AvatarScene({ paths, controls, startPosition, floorY }) {
         else runAction?.fadeIn(0.2);
 
       } else if (moving && !isRunning && currentAnimation.current !== "walk") {
-        // Transición a caminar
         currentAnimation.current = "walk";
         idleAction?.fadeOut(0.2);
         runAction?.fadeOut(0.25);
@@ -285,7 +247,6 @@ function AvatarScene({ paths, controls, startPosition, floorY }) {
         else walkAction?.fadeIn(0.2);
 
       } else if (!moving && currentAnimation.current !== "idle") {
-        // Transición a idle (parado)
         currentAnimation.current = "idle";
         walkAction?.fadeOut(0.3);
         runAction?.fadeOut(0.3);
@@ -294,9 +255,6 @@ function AvatarScene({ paths, controls, startPosition, floorY }) {
       }
     }
 
-    // ── Gravedad y colisión con el piso ──────────────────────────────────
-    // floorY viene de la prop del mismo nombre.
-    // Cada sala define su propio piso pasando floorY al PlayerController.
     velocityY.current -= 0.008;
     group.current.position.y += velocityY.current;
 
@@ -304,12 +262,10 @@ function AvatarScene({ paths, controls, startPosition, floorY }) {
       group.current.position.y = floorY;
       velocityY.current = 0;
 
-      // Al aterrizar: cancelar estado de salto y limpiar callbacks
       if (isJumping.current) {
         isJumping.current = false;
         currentAnimation.current = "idle";
 
-        // Remover el listener del salto para que no se dispare tarde
         if (jumpFinishedCb.current && jumpAction?._mixer) {
           jumpAction._mixer.removeEventListener("finished", jumpFinishedCb.current);
           jumpFinishedCb.current = null;
@@ -320,19 +276,20 @@ function AvatarScene({ paths, controls, startPosition, floorY }) {
         _jumpAction?.fadeOut(0.15);
         _idleAction?.reset().fadeIn(0.2).play();
 
-        // Sincronizar refs con el estado real actual
         movingRef.current    = moving;
         isRunningRef.current = isRunning;
       }
     }
   });
 
-  // Renderizar el modelo del avatar seleccionado
-  return (
+return (
     <primitive
       ref={group}
       object={model.scene}
-      scale={0.6}
+      scale={avatarScale}
+      position={startPosition}
+      castShadow
+      receiveShadow
     />
   );
 }

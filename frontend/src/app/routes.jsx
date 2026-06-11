@@ -1,24 +1,9 @@
-// =======================
-// 📦 LIBRARIES
-// =======================
-import { createBrowserRouter } from "react-router-dom";
-
-// =======================
-// 🧩 COMPONENTS
-// =======================
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import ProtectedRoute from "../components/ProtectedRoute";
 import FlowGuard from "../components/FlowGuard";
-
-// =======================
-// 📄 PAGES - Auth
-// =======================
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import ResetPassword from "../pages/ResetPassword";
-
-// =======================
-// 📄 PAGES - Main App
-// =======================
 import Home from "../pages/Home";
 import Dashboard from "../pages/Dashboard";
 import Questionnaire from "../pages/Questionnaire";
@@ -27,14 +12,14 @@ import Scene from "../pages/Scene";
 import Progress from "../pages/Progress";
 import NotFound from "../pages/NotFound";
 
-// =======================
-// 🚦 ROUTER
-// =======================
 export const router = createBrowserRouter([
   // 🔓 Public Routes
   { path: "/", element: <Login /> },
   { path: "/register", element: <Register /> },
   { path: "/reset-password", element: <ResetPassword /> },
+
+  // 🔁 Redirect legacy /dashboard → /home
+  { path: "/dashboard", element: <Navigate to="/home" replace /> },
 
   // 🔐 Protected Routes
   {
@@ -47,7 +32,6 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: "questionnaire", element: <Questionnaire /> },
-
       {
         path: "avatar",
         element: (
@@ -56,7 +40,6 @@ export const router = createBrowserRouter([
           </FlowGuard>
         ),
       },
-
       {
         path: "scene",
         element: (
@@ -65,7 +48,6 @@ export const router = createBrowserRouter([
           </FlowGuard>
         ),
       },
-
       { path: "progress", element: <Progress /> },
     ],
   },

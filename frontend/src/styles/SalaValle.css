@@ -1,0 +1,298 @@
+/* ─────────────────────────────────────────────────────────
+   ANIMACIONES
+───────────────────────────────────────────────────────── */
+@keyframes fadeInModal {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);     }
+}
+
+@keyframes pulsePrompt {
+  0%, 100% { opacity: 1;    }
+  50%       { opacity: 0.65; }
+}
+
+/* ─────────────────────────────────────────────────────────
+   OVERLAY & MODAL
+───────────────────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 6, 2, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(6px);
+}
+
+.modal {
+  background: linear-gradient(160deg, #1a120a 0%, #2a1d0e 100%);
+  border: 1.5px solid rgba(232, 185, 100, 0.45);
+  border-radius: 20px;
+  padding: 36px 32px 28px;
+  max-width: 400px;
+  width: 70%;
+  text-align: center;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.7), 0 0 40px rgba(232,185,100,0.08);
+  animation: fadeInModal 0.35s ease;
+}
+
+.modalIconBig {
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: center;
+  filter: drop-shadow(0 2px 8px rgba(232,185,100,0.5));
+}
+
+.modalTitulo {
+  color: #e8c97a;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  letter-spacing: 0.03em;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.modalMensaje {
+  color: #d4c4a0;
+  font-size: 15px;
+  line-height: 1.65;
+  margin: 0 0 20px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.contadorBadge {
+  display: inline-block;
+  background: rgba(232, 185, 100, 0.15);
+  border: 1px solid rgba(232, 185, 100, 0.4);
+  color: #e8c97a;
+  border-radius: 30px;
+  padding: 5px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  letter-spacing: 0.04em;
+}
+
+.btnContinuar {
+  background: linear-gradient(135deg, #c8951f, #e8c97a);
+  color: #1a0e00;
+  border: none;
+  border-radius: 30px;
+  padding: 11px 36px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: opacity 0.2s;
+}
+
+/* ─────────────────────────────────────────────────────────
+   HUD
+───────────────────────────────────────────────────────── */
+.hudContador {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 9, 3, 0.72);
+  border: 1px solid rgba(232, 185, 100, 0.35);
+  border-radius: 30px;
+  padding: 7px 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+
+.hudTexto {
+  color: #e8c97a;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Segoe UI', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.hudMision {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 9, 3, 0.65);
+  border: 1px solid rgba(232, 185, 100, 0.2);
+  border-radius: 20px;
+  padding: 6px 18px;
+  color: #c4b07a;
+  font-size: 12px;
+  font-family: 'Segoe UI', sans-serif;
+  z-index: 100;
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+  max-width: 90vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─────────────────────────────────────────────────────────
+   PROMPT TECLADO (E) / BOTÓN INTERACCIÓN MÓVIL
+───────────────────────────────────────────────────────── */
+.promptE {
+  position: fixed;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 9, 3, 0.8);
+  border: 1px solid rgba(232, 185, 100, 0.4);
+  border-radius: 30px;
+  padding: 10px 22px;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  animation: pulsePrompt 1.8s ease-in-out infinite;
+}
+
+.kbd {
+  background: #e8c97a;
+  color: #1a0e00;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 14px;
+  font-weight: 800;
+  font-family: monospace;
+}
+
+.promptTexto {
+  color: #e8c97a;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.btnInteractMobile {
+  background: linear-gradient(135deg, #c8951f, #e8c97a);
+  color: #1a0e00;
+  border: none;
+  border-radius: 25px;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+}
+
+/* ─────────────────────────────────────────────────────────
+   RESPONSIVE — MÓVIL  (≤ 480px)
+───────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+
+  /* Modal */
+  .modal {
+    padding: 18px 14px 16px;
+    border-radius: 14px;
+    width: 78%;
+    max-width: 300px;
+  }
+
+  .modalIconBig {
+    margin-bottom: 6px;
+  }
+
+  .modalIconBig svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  .modalTitulo {
+    font-size: 15px;
+    margin: 0 0 8px;
+  }
+
+  .modalMensaje {
+    font-size: 11.5px;
+    line-height: 1.5;
+    margin: 0 0 12px;
+  }
+
+  .contadorBadge {
+    font-size: 10px;
+    padding: 3px 10px;
+    margin-bottom: 12px;
+  }
+
+  .btnContinuar {
+    padding: 8px 22px;
+    font-size: 13px;
+  }
+
+  /* HUD */
+  .hudContador {
+    top: 12px;
+    padding: 5px 14px;
+    gap: 5px;
+  }
+
+  .hudTexto {
+    font-size: 12px;
+  }
+
+  .hudMision {
+    top: 50px;
+    font-size: 11px;
+    padding: 5px 14px;
+    border-radius: 16px;
+  }
+
+  /* Prompt interacción */
+  .promptE {
+    bottom: 180px;
+    padding: 8px 16px;
+    gap: 8px;
+  }
+
+  .btnInteractMobile {
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 22px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   RESPONSIVE — TABLET  (481px – 768px)
+───────────────────────────────────────────────────────── */
+@media (min-width: 481px) and (max-width: 768px) {
+
+  /* Modal */
+  .modal {
+    padding: 32px 26px 24px;
+    max-width: 400px;
+  }
+
+  .modalTitulo {
+    font-size: 10px;
+  }
+
+  .modalMensaje {
+    font-size: 14px;
+  }
+
+  /* HUD */
+  .hudContador {
+    top: 14px;
+    padding: 6px 16px;
+  }
+
+  .hudMision {
+    top: 54px;
+    font-size: 11px;
+  }
+
+  /* Prompt interacción */
+  .promptE {
+    bottom: 150px;
+  }
+}

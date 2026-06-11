@@ -262,127 +262,137 @@
   box-shadow: 0 0 12px rgba(255,60,80,0.3);
   color: #fff;
 }
+
 /* =============================================================================
-   RESPONSIVE MÓVIL — scene HUD
+   RESPONSIVE MÓVIL — HUD compacto tipo píldora
 ============================================================================= */
 @media (max-width: 768px) {
-  /* HUD panels más compactos */
-  .hud-panel       { padding: 10px 12px; min-width: 160px; }
-  .hud-tl          { top: 10px; left: 10px; }
-  .hud-tr          { top: 10px; right: 10px; }
-  .hud-callsign    { font-size: 13px; letter-spacing: 1px; }
-}
-
-@media (max-width: 480px) {
-  /* HUD izquierdo y derecho más pequeños */
-  .hud-panel       { padding: 8px 10px; min-width: 130px; font-size: 11px; }
-  .hud-tl          { top: 8px; left: 8px; }
-  .hud-tr          { top: 8px; right: 8px; }
-  .hud-avatar      { width: 30px; height: 30px; }
-  .hud-initial     { font-size: 13px; }
-  .hud-callsign    { font-size: 12px; letter-spacing: 0.5px; }
-  .hud-level-badge { width: 12px; height: 12px; font-size: 7px; }
-
-  /* Botones HUD más compactos */
-  .hud-btn {
-    padding: 6px 10px;
-    font-size: 11px;
-  }
-}
-/* =============================================================================
-   MÓVIL LANDSCAPE — HUD optimizado para pantalla horizontal pequeña
-============================================================================= */
-@media (max-width: 768px) and (orientation: landscape) {
-
-  /* Paneles más delgados verticalmente */
   .hud-panel {
     padding: 6px 10px;
     min-width: 0;
+    max-width: 48vw;
+    border-radius: 99px;
+    clip-path: none;
+    display: flex;
+    align-items: center;
   }
 
-  .hud-tl { top: 6px; left: 6px; max-width: calc(50vw - 12px); }
-  .hud-tr { top: 6px; right: 6px; max-width: calc(50vw - 12px); }
+  .hud-panel::before,
+  .hud-panel::after {
+    display: none;
+  }
 
-  /* Nombre recortado con puntos suspensivos */
+  .hud-tl { top: 8px; left: 8px; }
+  .hud-tr { top: 8px; right: 8px; }
+
+  /* ── Panel jugador: solo avatar + nombre ── */
+  .hud-player-header {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+    gap: 8px;
+  }
+
+  .hud-avatar { width: 28px; height: 28px; }
+  .hud-initial { font-size: 12px; }
+  .hud-level-badge { width: 11px; height: 11px; font-size: 6px; }
+
   .hud-callsign {
     font-size: 11px;
     letter-spacing: 0.5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 120px;
+    max-width: 32vw;
   }
 
-  /* Avatar más pequeño */
-  .hud-avatar      { width: 26px; height: 26px; }
-  .hud-initial     { font-size: 11px; }
-  .hud-level-badge { width: 11px; height: 11px; font-size: 6px; }
-
-  /* Ocultar barras para ganar espacio */
-  .hud-bar-row     { display: none; }
-
-  /* Zona activa más compacta */
-  .hud-zone        { padding: 4px 7px; margin-bottom: 5px; }
-  .hud-zone-title  { font-size: 7px; margin-bottom: 2px; }
-  .hud-zone-name   { font-size: 13px; letter-spacing: 1.5px; }
-
-  /* Score row más compacto */
-  .hud-score-row   { margin-bottom: 6px; padding-bottom: 5px; gap: 4px; }
-  .hud-score-label { font-size: 9px; }
-  .hud-trend       { font-size: 8px; padding: 1px 4px; }
-
-  /* Botones más pequeños */
-  .hud-btn {
-    padding: 4px 8px;
-    font-size: 10px;
+  .hud-status {
+    font-size: 7px;
     letter-spacing: 1px;
-    gap: 3px;
+    margin-top: 1px;
   }
+  .hud-dot { width: 4px; height: 4px; }
+
+  /* Ocultar barras de bienestar/EXP por defecto en móvil */
+  .hud-bar-row { display: none; }
+
+  /* ── Panel derecho: solo zona activa, compacta ── */
+  .hud-zone {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin-bottom: 0;
+  }
+  .hud-zone-title { display: none; }
+  .hud-zone-name {
+    font-size: 11px;
+    letter-spacing: 1px;
+    gap: 4px;
+  }
+
+  /* Ocultar score y mostrar solo botones */
+  .hud-score-row { display: none; }
 
   .hud-actions { gap: 4px; }
+  .hud-btn {
+    padding: 5px 8px;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    gap: 3px;
+    clip-path: none;
+    border-radius: 99px;
+  }
 
-  /* Status más pequeño */
-  .hud-status { font-size: 7px; letter-spacing: 1px; }
-  .hud-dot    { width: 4px; height: 4px; }
+  /* En el panel derecho: zona arriba, botones abajo en columna compacta */
+  .hud-tr {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    display: flex;
+    background: transparent;
+    border: none;
+    backdrop-filter: none;
+    padding: 0;
+  }
+
+  .hud-tr .hud-zone,
+  .hud-tr .hud-actions {
+    background: linear-gradient(135deg, rgba(0,8,16,0.82) 0%, rgba(0,16,28,0.75) 100%);
+    border: 1px solid rgba(0,200,255,0.18);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 99px;
+    padding: 6px 10px;
+  }
 }
 
 /* =============================================================================
-   MÓVIL MUY PEQUEÑO landscape (iPhone SE, etc.)
+   MÓVIL MUY PEQUEÑO (≤480px)
 ============================================================================= */
-@media (max-width: 568px) and (orientation: landscape) {
+@media (max-width: 480px) {
+  .hud-tl, .hud-tr { max-width: 46vw; }
 
-  .hud-panel {
-    padding: 4px 6px;
-    min-width: 0;
-  }
-
-  .hud-tl { max-width: calc(38vw - 8px); }
-  .hud-tr { max-width: calc(38vw - 8px); }
-
-  .hud-avatar { width: 22px; height: 22px; }
-  .hud-initial { font-size: 9px; }
-  .hud-level-badge { width: 9px; height: 9px; font-size: 6px; }
-
-  .hud-callsign {
-    max-width: 70px;
-    font-size: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .hud-avatar { width: 24px; height: 24px; }
+  .hud-initial { font-size: 11px; }
+  .hud-callsign { font-size: 10px; max-width: 28vw; }
 
   .hud-zone-name { font-size: 10px; }
-  .hud-zone-title { font-size: 6px; }
-  .hud-zone { padding: 3px 5px; }
-
-  /* Ocultar score, solo mostrar botones */
-  .hud-score-row { display: none; }
 
   .hud-btn {
-    padding: 2px 4px;
-    font-size: 7px;
-    gap: 2px;
+    padding: 4px 7px;
+    font-size: 9px;
   }
+}
 
-  .hud-actions { gap: 2px; }
+/* =============================================================================
+   MÓVIL LANDSCAPE
+============================================================================= */
+@media (max-width: 768px) and (orientation: landscape) {
+  .hud-tl { top: 6px; left: 6px; max-width: 40vw; }
+  .hud-tr { top: 6px; right: 6px; max-width: 40vw; }
+
+  .hud-avatar { width: 22px; height: 22px; }
+  .hud-callsign { font-size: 9px; max-width: 26vw; }
+  .hud-zone-name { font-size: 9px; }
+  .hud-btn { padding: 3px 6px; font-size: 8px; }
 }
