@@ -693,4 +693,11 @@
     max-width: 860px;        /* ← limita el ancho igual que en el monitor */
     margin: 0 auto;          /* ← centra horizontalmente */
   }
+
+@media (max-width: 768px) {
+  .q-card-single,
+  .q-result-screen {
+    animation: none !important;
+  }
+}
 }

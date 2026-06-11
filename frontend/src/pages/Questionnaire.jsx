@@ -357,7 +357,7 @@ export default function Questionnaire() {
           </div>
         </div>
 
-        <div className="q-card-single" key={step}>
+        <div className="q-card-single">
           <div className="q-card-icon-wrap">
             <Icon size={30} strokeWidth={1.5} />
           </div>
