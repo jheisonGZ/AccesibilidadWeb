@@ -521,6 +521,11 @@
   z-index: 9999;
 }
 
+.q-result-actions .q-btn-back {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
 .q-btn-submit {
   display: flex;
   align-items: center;
@@ -560,6 +565,8 @@
     align-items: flex-start;    /* en móvil alinea arriba para que el scroll funcione */
   }
 
+  /* para hacer el contenedor menos ancho en móvil */
+ 
   /* pregunta */
   .q-card-single { padding: 28px 18px; }
   .q-opt-sub     { display: none; }
@@ -583,10 +590,12 @@
   /* botones en columna completa */
   .q-result-actions {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
   }
   .q-btn-back,
   .q-btn-submit {
+    width: auto;
+    max-width: 280px;  
     width: 100%;
     justify-content: center;
     padding: 13px 18px;

@@ -325,10 +325,10 @@ export default function Questionnaire() {
           {/* ── 5. Acciones ── */}
           <div className="q-result-actions">
             <button className="q-btn-back" onClick={handleBack}>
-              <ArrowLeft size={16} /> Revisar
+              <ArrowLeft size={18} /> Revisar
             </button>
             <button className="q-btn-submit" onClick={handleSubmit} disabled={saving}>
-              {saving ? "Guardando..." : <><CheckCircle size={18} /> Confirmar y continuar</>}
+              {saving ? "Guardando..." : <><CheckCircle size={16} /> Confirmar y continuar</>}
             </button>
           </div>
 
