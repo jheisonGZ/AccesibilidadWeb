@@ -1,6 +1,7 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useGLTF, useAnimations } from "@react-three/drei";
+import * as THREE from "three";
 import { auth, db } from "../../../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -16,23 +17,6 @@ const AVATAR_MODELS = {
 
 const FALLBACK = AVATAR_MODELS["male-2"];
 
-// =============================================================================
-// CONFIGURACIÓN POR SALA
-//
-// 🌲 SalaBosque → NO pasar nada. ✅ NO TOCAR
-//    <PlayerController controls={mobileControls} />
-//
-// 🏖️ SalaPlaya
-//    <PlayerController controls={mobileControls} startPosition={[0, -0.9, 5.3]} floorY={-0.9} />
-//
-// 🏝️ SalaIsla
-//    <PlayerController controls={mobileControls} startPosition={[0, -2, 0]} floorY={-2} />
-//
-// 🏔️ SalaValle
-//    <PlayerController controls={mobileControls} startPosition={[0, -2, 5]} floorY={1} playerRef={playerRef} />
-//
-// REGLA: startPosition[1] y floorY siempre deben ser el mismo número.
-// =============================================================================
 export default function PlayerController({
   controls,
   startPosition = [0, 1, 5.5],
@@ -85,11 +69,15 @@ function AvatarScene({ paths, controls, startPosition, floorY, playerRef, limite
   const walkAnimation = useGLTF("/models/animations/caminar.glb");
   const runAnimation  = useGLTF("/models/animations/correr.glb");
   const jumpAnimation = useGLTF("/models/animations/saltar.glb");
+  const tomarAnimation = useGLTF("/models/animations/tomar.glb");
+  const abrirAnimation = useGLTF("/models/animations/abrir.glb");
 
-  const idle = useAnimations(idleAnimation.animations, group);
-  const walk = useAnimations(walkAnimation.animations, group);
-  const run  = useAnimations(runAnimation.animations,  group);
-  const jump = useAnimations(jumpAnimation.animations, group);
+  const idle  = useAnimations(idleAnimation.animations, group);
+  const walk  = useAnimations(walkAnimation.animations, group);
+  const run   = useAnimations(runAnimation.animations,  group);
+  const jump  = useAnimations(jumpAnimation.animations, group);
+  const tomar = useAnimations(tomarAnimation.animations, group);
+  const abrir = useAnimations(abrirAnimation.animations, group);
 
   const keys             = useRef({});
   const movingRef        = useRef(false);
@@ -99,6 +87,10 @@ function AvatarScene({ paths, controls, startPosition, floorY, playerRef, limite
   const isJumping        = useRef(false);
   const jumpConsumed     = useRef(false);
   const jumpFinishedCb   = useRef(null);
+
+  // NUEVO: estado de animación contextual (tomar / abrir)
+  const isActing       = useRef(false);
+  const actingFinishedCb = useRef(null);
 
   useEffect(() => {
     const down = (e) => {
@@ -138,8 +130,78 @@ function AvatarScene({ paths, controls, startPosition, floorY, playerRef, limite
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ───────────────────────────────────────────────────────
+  // NUEVO: reproducir animación contextual (tomar / abrir)
+  // ───────────────────────────────────────────────────────
+  const playAnimation = useCallback((name, onComplete) => {
+    if (isActing.current) {
+      onComplete?.();
+      return;
+    }
+
+    const idleAction  = Object.values(idle.actions  || {})[0];
+    const walkAction  = Object.values(walk.actions  || {})[0];
+    const runAction   = Object.values(run.actions   || {})[0];
+    const jumpAction  = Object.values(jump.actions  || {})[0];
+    const tomarAction = Object.values(tomar.actions || {})[0];
+    const abrirAction = Object.values(abrir.actions || {})[0];
+
+    const targetAction = name === "tomar" ? tomarAction
+                        : name === "abrir" ? abrirAction
+                        : null;
+
+    if (!targetAction || !targetAction._mixer) {
+      onComplete?.();
+      return;
+    }
+
+    isActing.current = true;
+    currentAnimation.current = "action";
+
+    idleAction?.fadeOut(0.1);
+    walkAction?.fadeOut(0.1);
+    runAction?.fadeOut(0.1);
+    jumpAction?.fadeOut(0.1);
+
+    targetAction.reset();
+    targetAction.setLoop(THREE.LoopOnce, 1);
+    targetAction.clampWhenFinished = true;
+    targetAction.fadeIn(0.15).play();
+
+    const mixer = targetAction._mixer;
+
+    if (actingFinishedCb.current) {
+      mixer.removeEventListener("finished", actingFinishedCb.current);
+    }
+
+    actingFinishedCb.current = (e) => {
+      if (e.action !== targetAction) return;
+      isActing.current = false;
+      currentAnimation.current = "idle";
+      movingRef.current    = false;
+      isRunningRef.current = false;
+      targetAction.fadeOut(0.2);
+      idleAction?.reset().fadeIn(0.2).play();
+      mixer.removeEventListener("finished", actingFinishedCb.current);
+      actingFinishedCb.current = null;
+      onComplete?.();
+    };
+
+    mixer.addEventListener("finished", actingFinishedCb.current);
+  }, [idle, walk, run, jump, tomar, abrir]);
+
+  // Exponer playAnimation en el ref del jugador
+  useEffect(() => {
+    if (group.current) {
+      group.current.playAnimation = playAnimation;
+    }
+  }, [playAnimation]);
+
   useFrame(() => {
     if (!group.current) return;
+
+    // Si está ejecutando "tomar" o "abrir", congelar movimiento
+    if (isActing.current) return;
 
     const isRunning = !!(keys.current["shift"] || controls?.current?.run);
     const vel  = isRunning ? 0.1 : 0.05;

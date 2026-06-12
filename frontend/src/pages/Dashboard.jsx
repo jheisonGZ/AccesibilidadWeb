@@ -8,6 +8,15 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useFeedback } from "../hooks/useFeedback";
 
+const TROPHY_STYLE = (
+  <style>{`
+    @keyframes trophy-pulse {
+      0%, 100% { transform: scale(1);    }
+      50%       { transform: scale(1.18); }
+    }
+  `}</style>
+);
+
 const playSound = (type) => {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -65,7 +74,6 @@ const playSound = (type) => {
   } catch (_) {}
 };
 
-// Deriva color, label y sub directamente del conteo — sin helper externo
 function getTrophy(count) {
   if (count >= 4) return { color: "#AFA9EC", bg: "rgba(127,119,221,0.2)",  label: "Maestro del bienestar", sub: "Todos los logros desbloqueados" };
   if (count >= 3) return { color: "#FFD700", bg: "rgba(255,215,0,0.13)",   label: "Oro",                   sub: "Casi completo" };
@@ -80,7 +88,12 @@ function TrophyFooter({ achievements }) {
   return (
     <div className="trophy-block">
       <div className="trophy-icon" style={{ background: trophy.bg }}>
-        <Trophy size={18} color={trophy.color} strokeWidth={1.8} />
+        <Trophy
+          size={18}
+          color={trophy.color}
+          strokeWidth={1.8}
+          style={{ animation: "trophy-pulse 2s ease-in-out infinite", display: "block" }}
+        />
       </div>
       <div>
         <span className="trophy-name" style={{ color: trophy.color }}>{trophy.label}</span>
@@ -91,6 +104,24 @@ function TrophyFooter({ achievements }) {
       </div>
     </div>
   );
+}
+
+function UserAvatar({ photoURL, initial }) {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  useEffect(() => { setImgFailed(false); }, [photoURL]);
+
+  if (photoURL && !imgFailed) {
+    return (
+      <img
+        src={photoURL}
+        alt="avatar"
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
+
+  return <span>{initial}</span>;
 }
 
 export default function Dashboard() {
@@ -160,8 +191,16 @@ export default function Dashboard() {
       text: "Primero debes llenar el cuestionario para poder elegir un avatar.",
       confirmButtonText: "Entendido",
       confirmButtonColor: "#2c5364",
-      background: "#0f2027",
       color: "#fff",
+      background: "transparent",
+      didOpen: () => {
+        const popup = Swal.getPopup();
+        popup.style.backdropFilter       = "blur(20px)";
+        popup.style.webkitBackdropFilter = "blur(20px)";
+        popup.style.background           = "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))";
+        popup.style.border               = "1px solid rgba(255,255,255,0.18)";
+        popup.style.borderRadius         = "24px";
+      }
     });
   };
 
@@ -175,8 +214,16 @@ export default function Dashboard() {
       text: "Debes elegir un avatar antes de entrar al escenario 3D.",
       confirmButtonText: "Entendido",
       confirmButtonColor: "#2c5364",
-      background: "#0f2027",
       color: "#fff",
+      background: "transparent",
+      didOpen: () => {
+        const popup = Swal.getPopup();
+        popup.style.backdropFilter       = "blur(20px)";
+        popup.style.webkitBackdropFilter = "blur(20px)";
+        popup.style.background           = "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))";
+        popup.style.border               = "1px solid rgba(255,255,255,0.18)";
+        popup.style.borderRadius         = "24px";
+      }
     });
   };
 
@@ -192,8 +239,16 @@ export default function Dashboard() {
       confirmButtonText: "Sí, cambiar",
       cancelButtonText: "No, quedarse",
       confirmButtonColor: "#2c5364",
-      background: "#0f2027",
       color: "#fff",
+      background: "transparent",
+      didOpen: () => {
+        const popup = Swal.getPopup();
+        popup.style.backdropFilter       = "blur(20px)";
+        popup.style.webkitBackdropFilter = "blur(20px)";
+        popup.style.background           = "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))";
+        popup.style.border               = "1px solid rgba(255,255,255,0.18)";
+        popup.style.borderRadius         = "24px";
+      }
     });
     return result.isConfirmed;
   };
@@ -202,14 +257,12 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-page">
+      {TROPHY_STYLE}
       <div className="dashboard-container">
 
         <div className="dashboard-welcome">
           <div className="dashboard-avatar">
-            {user?.photoURL
-              ? <img src={user.photoURL} alt="avatar" />
-              : <span>{initial}</span>
-            }
+            <UserAvatar photoURL={user?.photoURL} initial={initial} />
           </div>
           <div className="dashboard-welcome-text">
             <span className="dashboard-welcome-label">Bienvenido</span>

@@ -463,17 +463,32 @@ export default function AvatarSelect() {
       const av = AVATARS.find((a) => a.id === selected);
       if (!av) throw new Error("Avatar no encontrado: " + selected);
 
-      Swal.fire({
-        icon: "success",
-        title: `${av.name} seleccionado`,
-        timer: 1500,
-        timerProgressBar: true,
-        showConfirmButton: false,
-        didOpen: () => playConfirmSound(),
-        background: "#0f2027",
-        color: "#fff",
-        iconColor: av.color,
-      });
+     Swal.fire({
+  icon: "success",
+  title: `${av.name} seleccionado`,
+  timer: 1500,
+  timerProgressBar: true,
+  showConfirmButton: false,
+  color: "#fff",
+  iconColor: av.color,
+
+  background: "transparent",
+
+  didOpen: () => {
+    playConfirmSound();
+
+    const popup = Swal.getPopup();
+
+    popup.style.backdropFilter = "blur(20px)";
+    popup.style.webkitBackdropFilter = "blur(20px)";
+    popup.style.background =
+      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))";
+    popup.style.border = "1px solid rgba(255,255,255,0.18)";
+    popup.style.borderRadius = "24px";
+    popup.style.boxShadow =
+      "0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)";
+  }
+});
 
       navigate("/home/scene", "Cargando escenario 3D");
 
@@ -485,6 +500,19 @@ export default function AvatarSelect() {
         title: "Error",
         text: "No se pudo guardar el avatar.",
         confirmButtonColor: "#2c5364",
+        color: "#fff",
+        background: "transparent",
+
+        didOpen: () => {
+          const popup = Swal.getPopup();
+
+          popup.style.backdropFilter = "blur(20px)";
+          popup.style.webkitBackdropFilter = "blur(20px)";
+          popup.style.background =
+            "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))";
+          popup.style.border = "1px solid rgba(255,255,255,0.18)";
+          popup.style.borderRadius = "24px";
+        }
       });
     } finally {
       setLoading(false);

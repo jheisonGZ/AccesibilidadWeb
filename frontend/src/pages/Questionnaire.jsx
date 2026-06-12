@@ -205,15 +205,65 @@ export default function Questionnaire() {
         lastUpdated: serverTimestamp(),
       }, { merge: true });
 
-      
+await Swal.fire({
+  icon: "success",
+  title: result.label,
+  html: `Tu puntaje fue <b>${score} / ${MAX_SCORE}</b>.<br/>${result.desc}`,
+  confirmButtonText: "Elegir avatar",
+  confirmButtonColor: "#2c5364",
+  color: "#fff",
+  iconColor: result.color,
 
-      navigate("/home/avatar", "Preparando tu avatar");
+  background: "transparent",
+
+  didOpen: () => {
+    const popup = Swal.getPopup();
+
+    popup.style.backdropFilter = "blur(20px)";
+    popup.style.webkitBackdropFilter = "blur(20px)";
+
+    popup.style.background =
+      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))";
+
+    popup.style.border = "1px solid rgba(255,255,255,0.18)";
+    popup.style.borderRadius = "24px";
+
+    popup.style.boxShadow =
+      "0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)";
+  }
+});
+
+requestAnimationFrame(() => {
+  navigate("/home/avatar", "Preparando tu avatar");
+});
 
     } catch (e) {
-      console.error(e);
-      setSaving(false);
-      Swal.fire({ icon: "error", title: "Error", text: "No se pudo guardar. Intenta de nuevo.", confirmButtonColor: "#2c5364" });
+  console.error(e);
+  setSaving(false);
+
+  Swal.fire({
+    icon: "error",
+    title: "Error",
+    text: "No se pudo guardar. Intenta de nuevo.",
+    confirmButtonText: "Entendido",
+    confirmButtonColor: "#2c5364",
+    color: "#fff",
+    background: "transparent",
+
+    didOpen: () => {
+      const popup = Swal.getPopup();
+
+      popup.style.backdropFilter = "blur(20px)";
+      popup.style.webkitBackdropFilter = "blur(20px)";
+      popup.style.background =
+        "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08))";
+      popup.style.border = "1px solid rgba(255,255,255,0.18)";
+      popup.style.borderRadius = "24px";
+      popup.style.boxShadow =
+        "0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)";
     }
+  });
+}
   };
 
   /* ══ PANTALLA RESULTADO ══ */

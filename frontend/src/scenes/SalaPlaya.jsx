@@ -717,29 +717,47 @@ export default function SalaPlaya({ onSalir }) {
 
   const handleCofreNearby = useCallback((isNear) => setIsNearCofre(isNear), []);
 
-  const handleInteract = useCallback(() => {
-    if (modalOpen) return;
+const handleInteract = useCallback(() => {
+  if (modalOpen) return;
 
-    if (nearbyBotellaId !== null && !collectedIds.includes(nearbyBotellaId)) {
-      const data = BOTELLA_DATA.find((b) => b.id === nearbyBotellaId);
-      if (data) {
-        setModalBotella(data);
-        setCollectedIds((prev) => [...prev, nearbyBotellaId]);
-        playSound("botella");
-      }
-      return;
+  // ── Recoger botella ──
+  if (nearbyBotellaId !== null && !collectedIds.includes(nearbyBotellaId)) {
+    const data = BOTELLA_DATA.find((b) => b.id === nearbyBotellaId);
+    if (!data) return;
+
+    const ejecutar = () => {
+      setModalBotella(data);
+      setCollectedIds((prev) => [...prev, nearbyBotellaId]);
+      playSound("botella");
+    };
+
+    if (playerRef.current?.playAnimation) {
+      playerRef.current.playAnimation("tomar", ejecutar);
+    } else {
+      ejecutar();
     }
+    return;
+  }
 
-    if (isNearCofre) {
-      if (!allCollected) {
-        setModalCofreBloq(true);
-        playSound("bloqueado");
-      } else if (!cofreAbierto) {
+  // ── Cofre ──
+  if (isNearCofre) {
+    if (!allCollected) {
+      setModalCofreBloq(true);
+      playSound("bloqueado");
+    } else if (!cofreAbierto) {
+      const ejecutar = () => {
         setCofreAbierto(true);
         playSound("cofre");
+      };
+
+      if (playerRef.current?.playAnimation) {
+        playerRef.current.playAnimation("abrir", ejecutar);
+      } else {
+        ejecutar();
       }
     }
-  }, [modalOpen, nearbyBotellaId, collectedIds, isNearCofre, allCollected, cofreAbierto]);
+  }
+}, [modalOpen, nearbyBotellaId, collectedIds, isNearCofre, allCollected, cofreAbierto, playerRef]);
 
   useKeyE(handleInteract);
 
