@@ -11,6 +11,7 @@ import MobileControlsOverlay from "../components/3d/mobile/MobileControlsOverlay
 import RotatePrompt from "../components/3d/mobile/RotatePrompt";
 import { useMobileControls } from "../components/3d/mobile/useMobileControls";
 import { useLandscapeLock } from "../components/3d/mobile/useLandscapeLock";
+import Water from "../components/3d/water";
 
 // ─────────────────────────────────────────────────────────
 // DATOS DE MISIONES — CRISTALES
@@ -74,6 +75,172 @@ function FollowCamera({ target }) {
   return null;
 }
 
+// ⭐ ESTRELLAS EN EL CIELO NOCTURNO
+function Estrellas() {
+  const count = 500;
+  const mesh = useRef();
+
+  const [positions] = useMemo(() => {
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 80;
+      pos[i * 3 + 1] = Math.random() * 20 + 5;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 80;
+    }
+    return [pos];
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (!mesh.current) return;
+    mesh.current.material.opacity = 0.6 + Math.sin(clock.elapsedTime * 0.5) * 0.3;
+  });
+
+  return (
+    <points ref={mesh}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={count}
+          array={positions}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <pointsMaterial
+        size={0.15}
+        color="#ffffff"
+        transparent
+        opacity={0.8}
+        sizeAttenuation
+      />
+    </points>
+  );
+}
+
+// ☄️ ESTRELLAS FUGACES MEJORADAS
+function EstrellasFugaces() {
+  const count = 3;
+  const meteorsRef = useRef([]);
+
+  const meteors = useMemo(() => {
+    const arr = [];
+    for (let i = 0; i < count; i++) {
+      arr.push({
+        id: i,
+        x: (Math.random() - 0.5) * 60,
+        y: Math.random() * 5 + 2,
+        z: -15 - Math.random() * 20,
+        speed: 0.3 + Math.random() * 0.8,
+        tailLength: 3 + Math.random() * 5,
+        opacity: 0,
+        active: false,
+        timer: Math.random() * 5,
+        positions: new Float32Array(2 * 3), // [x1,y1,z1, x2,y2,z2]
+      });
+    }
+    return arr;
+  }, []);
+
+  // Refs para los buffers de cada meteoro
+  const bufferRefs = useRef([]);
+
+  useFrame((_, delta) => {
+    meteors.forEach((meteor, index) => {
+      meteor.timer += delta;
+
+      if (meteor.timer > 8 + Math.random() * 7) {
+        meteor.active = true;
+        meteor.opacity = 1;
+        meteor.x = (Math.random() - 0.5) * 60;
+        meteor.y = Math.random() * 5 + 2;
+        meteor.z = -15 - Math.random() * 20;
+        meteor.timer = 0;
+      }
+
+      if (meteor.active) {
+        // Mover el meteoro
+        meteor.x += meteor.speed * 2;
+        meteor.y -= meteor.speed;
+        meteor.opacity -= delta * 0.8;
+
+        // Actualizar posiciones de la cola
+        meteor.positions[0] = meteor.x;
+        meteor.positions[1] = meteor.y;
+        meteor.positions[2] = meteor.z;
+        meteor.positions[3] = meteor.x - meteor.tailLength;
+        meteor.positions[4] = meteor.y + meteor.tailLength * 0.3;
+        meteor.positions[5] = meteor.z;
+
+        // Actualizar buffer geometry
+        if (bufferRefs.current[index]) {
+          bufferRefs.current[index].attributes.position.needsUpdate = true;
+        }
+
+        if (meteor.opacity <= 0) {
+          meteor.active = false;
+          meteor.opacity = 0;
+        }
+      }
+    });
+  });
+
+  return (
+    <group>
+      {meteors.map((meteor, index) => {
+        if (!meteor.active) return null;
+        return (
+          <group key={meteor.id}>
+            {/* Cabeza del meteoro */}
+            <mesh position={[meteor.x, meteor.y, meteor.z]}>
+              <sphereGeometry args={[0.08, 8, 8]} />
+              <meshBasicMaterial color="#ffffff" opacity={meteor.opacity} transparent />
+            </mesh>
+
+            {/* Cola del meteoro */}
+            <mesh
+              position={[
+                meteor.x - meteor.tailLength,
+                meteor.y + meteor.tailLength * 0.3,
+                meteor.z
+              ]}
+              rotation={[0, 0, Math.PI / 4]}
+            >
+              <coneGeometry args={[0.05, meteor.tailLength, 6]} />
+              <meshBasicMaterial color="#aaccff" opacity={meteor.opacity * 0.6} transparent />
+            </mesh>
+
+            {/* Estela (línea que se mueve con el meteoro) */}
+            <line>
+              <bufferGeometry ref={(el) => (bufferRefs.current[index] = el)}>
+                <bufferAttribute
+                  attach="attributes-position"
+                  count={2}
+                  array={meteor.positions}
+                  itemSize={3}
+                />
+              </bufferGeometry>
+              <lineBasicMaterial
+                color="#ffffff"
+                opacity={meteor.opacity * 0.4}
+                transparent
+              />
+            </line>
+
+            {/* Brillo extra alrededor */}
+            <mesh position={[meteor.x, meteor.y, meteor.z]}>
+              <sphereGeometry args={[0.15, 8, 8]} />
+              <meshBasicMaterial
+                color="#aaccff"
+                opacity={meteor.opacity * 0.3}
+                transparent
+              />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 // ─────────────────────────────────────────────────────────
 // ESCENARIO ISLA
 // ─────────────────────────────────────────────────────────
@@ -100,24 +267,6 @@ function Isla() {
 }
 
 // ─────────────────────────────────────────────────────────
-// SKYDOME
-// ─────────────────────────────────────────────────────────
-function SkyDome() {
-  const { scene } = useGLTF("/models/Otros/sky.glb");
-  useEffect(() => {
-    scene.traverse((obj) => {
-      if (obj.isMesh) {
-        obj.material.side       = THREE.DoubleSide;
-        obj.material.depthWrite = false;
-        obj.material.needsUpdate = true;
-        obj.renderOrder         = 0.1;
-      }
-    });
-  }, [scene]);
-  return <primitive object={scene} position={[0, -5, 0]} scale={0.1} />;
-}
-
-// ─────────────────────────────────────────────────────────
 // CRISTAL INDIVIDUAL
 // ─────────────────────────────────────────────────────────
 function Cristal({ data, playerRef, collected, onNearby }) {
@@ -134,7 +283,6 @@ function Cristal({ data, playerRef, collected, onNearby }) {
     });
   }, [clonedScene]);
 
-  // Flotación suave
   useFrame(({ clock }) => {
     if (!meshRef.current || collected) return;
     meshRef.current.position.y =
@@ -142,7 +290,6 @@ function Cristal({ data, playerRef, collected, onNearby }) {
     meshRef.current.rotation.y += 0.008;
   });
 
-  // Detección de proximidad
   useFrame(() => {
     if (!playerRef.current || collected) return;
     const px = playerRef.current.position.x;
@@ -183,7 +330,6 @@ function Cofre({ playerRef, allCollected, onNearby, shouldOpen, config, onOpenCo
     });
   }, [scene]);
 
-  // Abrir
   useEffect(() => {
     if (shouldOpen && !isOpen && !isClosing && !isOpening && actions) {
       const openAction = actions["Scene"];
@@ -207,7 +353,6 @@ function Cofre({ playerRef, allCollected, onNearby, shouldOpen, config, onOpenCo
     }
   }, [shouldOpen, isOpen, isClosing, isOpening, actions, mixer, onOpenComplete]);
 
-  // Cerrar
   const closeCofre = useCallback(() => {
     if (isOpen && !isClosing && actions) {
       const openAction = actions["Scene"];
@@ -236,7 +381,6 @@ function Cofre({ playerRef, allCollected, onNearby, shouldOpen, config, onOpenCo
     if (groupRef.current) groupRef.current.closeCofre = closeCofre;
   }, [closeCofre]);
 
-  // Proximidad
   useFrame(() => {
     if (!playerRef.current || isOpen || isClosing || isOpening) return;
     const px = playerRef.current.position.x;
@@ -246,7 +390,6 @@ function Cofre({ playerRef, allCollected, onNearby, shouldOpen, config, onOpenCo
     onNearby(Math.sqrt(dx * dx + dz * dz) < PROXIMITY_RADIUS);
   });
 
-  // Brillo púrpura
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
     const shouldGlow = allCollected && !isOpen && !isOpening && !isClosing;
@@ -298,11 +441,13 @@ function MisionScene({
 }) {
   return (
     <>
-      <ambientLight intensity={1.0} color="#e0d0ff" />
+      <color attach="background" args={["#0a0a1a"]} />
+      
+      <ambientLight intensity={7} color="#4466aa" />
       <directionalLight
-        position={[20, 30, 10]}
-        intensity={2.2}
-        color="#f0e8ff"
+        position={[20, 20, 10]}
+        intensity={6.2}
+        color="#8899cc"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -316,8 +461,10 @@ function MisionScene({
       />
 
       <FollowCamera target={playerRef} />
-      <SkyDome />
+      <Estrellas />
+      <EstrellasFugaces />   {/* ☄️ NUEVO: Solo esto se agrega */}
       <Isla />
+      <Water positionY={-7} scale={20} />
 
       {CRISTAL_DATA.map((data) => (
         <Cristal
@@ -342,15 +489,10 @@ function MisionScene({
 
       <PlayerController
         controls={mobileControls}
-        startPosition={[0, -3, 5]}
+        startPosition={[0, -2.6, 17.2]}
         floorY={-2.6}
         playerRef={playerRef}
-        limites={{ 
-        xMin: -5,    // ← Límite izquierdo (más negativo = más a la izquierda)
-        xMax: 5,     // ← Límite derecho (más positivo = más a la derecha)
-        zMin: 5,      // ← Límite atrás (más bajo = más al fondo)
-        zMax: 17      // ← Límite adelante (más alto = más al frente)
-        }}
+        limites={{ xMin: -5, xMax: 5, zMin: 5, zMax: 17 }}
         avatarScale={1}
       />
     </>
@@ -393,15 +535,9 @@ function ModalCofreBloqueado({ onClose }) {
           <Lock size={48} color="#a855f7" strokeWidth={1.5} />
         </div>
         <h2 style={{ ...styles.modalTitulo, color: "#a855f7" }}>Cofre Sellado</h2>
-        <p style={styles.modalMensaje}>
-          Todavía quedan cristales por descubrir.
-        </p>
-        <p style={{ ...styles.modalMensaje, fontSize: 13, opacity: 0.8 }}>
-          Encuentra los tres cristales para desbloquear el cofre.
-        </p>
-        <button style={{ ...styles.btnContinuar, background: "linear-gradient(135deg, #9333ea, #a855f7)" }} onClick={onClose}>
-          Entendido
-        </button>
+        <p style={styles.modalMensaje}>Todavía quedan cristales por descubrir.</p>
+        <p style={{ ...styles.modalMensaje, fontSize: 13, opacity: 0.8 }}>Encuentra los tres cristales para desbloquear el cofre.</p>
+        <button style={{ ...styles.btnContinuar, background: "linear-gradient(135deg, #9333ea, #a855f7)" }} onClick={onClose}>Entendido</button>
       </div>
     </div>
   );
@@ -417,27 +553,12 @@ function ModalLogroFinal({ onClose, onSalir }) {
         <div style={styles.modalIconBig}>
           <Trophy size={52} color="#f5c842" strokeWidth={1.5} />
         </div>
-        <h2 style={{ ...styles.modalTitulo, color: "#f5c842" }}>
-          ¡Logro Desbloqueado!
-        </h2>
-        <p style={{ ...styles.modalMensaje, fontWeight: 700, fontSize: 18 }}>
-          ⭐ Explorador Estelar
-        </p>
-        <p style={styles.modalMensaje}>
-          Has encontrado los tres cristales ancestrales y reunido sus enseñanzas. Ahora sabes que reconocer tus logros, confiar en tus capacidades y avanzar paso a paso son herramientas valiosas para fortalecer tu bienestar emocional.
-        </p>
+        <h2 style={{ ...styles.modalTitulo, color: "#f5c842" }}>¡Logro Desbloqueado!</h2>
+        <p style={{ ...styles.modalMensaje, fontWeight: 700, fontSize: 18 }}>⭐ Explorador Estelar</p>
+        <p style={styles.modalMensaje}>Has encontrado los tres cristales ancestrales...</p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <button style={{ ...styles.btnContinuar, display: "flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg, #9333ea, #a855f7)" }} onClick={onClose}>
-            <Map size={18} />
-            Continuar explorando
-          </button>
-          <button
-            style={{ ...styles.btnContinuar, background: "linear-gradient(135deg, #7c3aed, #a855f7)", display: "flex", alignItems: "center", gap: 8 }}
-            onClick={onSalir}
-          >
-            <LayoutDashboard size={18} />
-            Volver al Dashboard
-          </button>
+          <button style={{ ...styles.btnContinuar, display: "flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg, #9333ea, #a855f7)" }} onClick={onClose}><Map size={18} />Continuar explorando</button>
+          <button style={{ ...styles.btnContinuar, background: "linear-gradient(135deg, #7c3aed, #a855f7)", display: "flex", alignItems: "center", gap: 8 }} onClick={onSalir}><LayoutDashboard size={18} />Volver al Dashboard</button>
         </div>
       </div>
     </div>
@@ -451,34 +572,17 @@ function ModalMisionCompletada({ onContinuar, onSalir }) {
   return (
     <div style={styles.overlay}>
       <div style={{ ...styles.modal, maxWidth: 440 }}>
-        <div style={styles.modalIconBig}>
-          <Trophy size={52} color="#f5c842" strokeWidth={1.5} />
-        </div>
-        <h2 style={{ ...styles.modalTitulo, color: "#f5c842" }}>
-          🏆 Misión Completada
-        </h2>
+        <div style={styles.modalIconBig}><Trophy size={52} color="#f5c842" strokeWidth={1.5} /></div>
+        <h2 style={{ ...styles.modalTitulo, color: "#f5c842" }}>🏆 Misión Completada</h2>
         <div style={{ marginBottom: 16 }}>
           <CheckCircle2 size={20} color="#f5c842" style={{ marginRight: 6, verticalAlign: "middle" }} />
           <span style={{ color: "#f5c842", fontSize: 14, fontWeight: 600 }}>Ya has completado la misión:</span>
         </div>
-        <p style={{ ...styles.modalMensaje, fontWeight: 700, fontSize: 18, marginBottom: 12 }}>
-          ⭐ Explorador Estelar
-        </p>
-        <p style={{ ...styles.modalMensaje, fontSize: 14 }}>
-          Has descubierto los tres cristales de sabiduría de la Isla de las Estrellas.
-        </p>
+        <p style={{ ...styles.modalMensaje, fontWeight: 700, fontSize: 18, marginBottom: 12 }}>⭐ Explorador Estelar</p>
+        <p style={{ ...styles.modalMensaje, fontSize: 14 }}>Has descubierto los tres cristales...</p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 8 }}>
-          <button style={{ ...styles.btnContinuar, display: "flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg, #9333ea, #a855f7)" }} onClick={onContinuar}>
-            <Map size={18} />
-            Continuar Explorando
-          </button>
-          <button
-            style={{ ...styles.btnContinuar, background: "linear-gradient(135deg, #7c3aed, #a855f7)", display: "flex", alignItems: "center", gap: 8 }}
-            onClick={onSalir}
-          >
-            <LayoutDashboard size={18} />
-            Volver al Dashboard
-          </button>
+          <button style={{ ...styles.btnContinuar, display: "flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg, #9333ea, #a855f7)" }} onClick={onContinuar}><Map size={18} />Continuar Explorando</button>
+          <button style={{ ...styles.btnContinuar, background: "linear-gradient(135deg, #7c3aed, #a855f7)", display: "flex", alignItems: "center", gap: 8 }} onClick={onSalir}><LayoutDashboard size={18} />Volver al Dashboard</button>
         </div>
       </div>
     </div>
@@ -495,64 +599,41 @@ function HUDMision({ collectedIds, showECristal, showECofre, isMobile, onInterac
       {!cofreYaAbierto && !misionCompletada && (
         <div style={styles.hudContador}>
           <Gem size={16} color="#a855f7" style={{ marginRight: 4 }} />
-          <span style={{ ...styles.hudTexto, color: "#a855f7" }}>
-            {collectedIds.length} / 3 cristales
-          </span>
+          <span style={{ ...styles.hudTexto, color: "#a855f7" }}>{collectedIds.length} / 3 cristales</span>
         </div>
       )}
-
       {!cofreYaAbierto && !misionCompletada && !allCollected && (
-        <div style={styles.hudMision}>
-          ⭐ Misión: Explorador Estelar — Explora la isla y encuentra los tres cristales
-        </div>
+        <div style={styles.hudMision}>⭐ Misión: Explorador Estelar — Explora la isla y encuentra los tres cristales</div>
       )}
-
       {!cofreYaAbierto && !misionCompletada && allCollected && (
         <div style={{ ...styles.hudMision, borderColor: "#a855f7", color: "#a855f7" }}>
           <Sparkles size={14} style={{ marginRight: 4, display: "inline", verticalAlign: "middle" }} />
           Has reunido los tres cristales. ¡El cofre te espera!
         </div>
       )}
-
       {(cofreYaAbierto || misionCompletada) && (
         <div style={{ ...styles.hudMision, borderColor: "#a855f7", color: "#a855f7", background: "rgba(10, 8, 20, 0.85)" }}>
           <CheckCircle size={14} style={{ marginRight: 4, display: "inline", verticalAlign: "middle" }} />
           ¡Misión completada! Eres el Explorador Estelar ⭐
         </div>
       )}
-
       {showECristal && (
         <div style={styles.promptE}>
           {isMobile ? (
-            <button style={styles.btnInteractMobile} onClick={onInteractMobile}>
-              <Gem size={16} style={{ marginRight: 6 }} />
-              Recoger cristal
-            </button>
+            <button style={styles.btnInteractMobile} onClick={onInteractMobile}><Gem size={16} style={{ marginRight: 6 }} />Recoger cristal</button>
           ) : (
-            <>
-              <kbd style={styles.kbd}>E</kbd>
-              <span style={styles.promptTexto}>Recoger cristal</span>
-            </>
+            <><kbd style={styles.kbd}>E</kbd><span style={styles.promptTexto}>Recoger cristal</span></>
           )}
         </div>
       )}
-
       {showECofre && (
         <div style={styles.promptE}>
           {isMobile ? (
             <button style={styles.btnInteractMobile} onClick={onInteractMobile}>
-              {allCollected
-                ? <><Sparkles size={16} style={{ marginRight: 6 }} />Abrir cofre</>
-                : <><Lock size={16} style={{ marginRight: 6 }} />Examinar cofre</>
-              }
+              {allCollected ? <><Sparkles size={16} style={{ marginRight: 6 }} />Abrir cofre</> : <><Lock size={16} style={{ marginRight: 6 }} />Examinar cofre</>}
             </button>
           ) : (
-            <>
-              <kbd style={styles.kbd}>E</kbd>
-              <span style={styles.promptTexto}>
-                {allCollected ? "Abrir cofre" : "Examinar cofre"}
-              </span>
-            </>
+            <><kbd style={styles.kbd}>E</kbd><span style={styles.promptTexto}>{allCollected ? "Abrir cofre" : "Examinar cofre"}</span></>
           )}
         </div>
       )}
@@ -564,7 +645,6 @@ function HUDMision({ collectedIds, showECristal, showECofre, isMobile, onInterac
 // PRECARGA
 // ─────────────────────────────────────────────────────────
 useGLTF.preload("/models/Isla.glb");
-useGLTF.preload("/models/Otros/sky.glb");
 useGLTF.preload("/models/cristal.glb");
 useGLTF.preload("/models/cofre.glb");
 
@@ -577,25 +657,22 @@ export default function SalaIsla({ onSalir }) {
   const playerRef       = useRef();
   const cofreRef        = useRef();
 
-  const [collectedIds,              setCollectedIds]              = useState([]);
-  const [modalCristal,              setModalCristal]              = useState(null);
-  const [modalCofreBloq,            setModalCofreBloq]            = useState(false);
-  const [modalLogro,                setModalLogro]                = useState(false);
-  const [cofreAbierto,              setCofreAbierto]              = useState(false);
-  const [cofreYaAbierto,            setCofreYaAbierto]            = useState(false);
-  const [modalMisionCompletada,     setModalMisionCompletada]     = useState(false);
+  const [collectedIds, setCollectedIds] = useState([]);
+  const [modalCristal, setModalCristal] = useState(null);
+  const [modalCofreBloq, setModalCofreBloq] = useState(false);
+  const [modalLogro, setModalLogro] = useState(false);
+  const [cofreAbierto, setCofreAbierto] = useState(false);
+  const [cofreYaAbierto, setCofreYaAbierto] = useState(false);
+  const [modalMisionCompletada, setModalMisionCompletada] = useState(false);
   const [misionCompletadaPreviamente, setMisionCompletadaPreviamente] = useState(false);
-  const [nearbyCristalId,           setNearbyCristalId]           = useState(null);
-  const [isNearCofre,               setIsNearCofre]               = useState(false);
+  const [nearbyCristalId, setNearbyCristalId] = useState(null);
+  const [isNearCofre, setIsNearCofre] = useState(false);
 
   const allCollected = collectedIds.length === 3;
-  const modalOpen    = !!modalCristal || modalCofreBloq || modalLogro || modalMisionCompletada;
-
-  const isMobile =
-    /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+  const modalOpen = !!modalCristal || modalCofreBloq || modalLogro || modalMisionCompletada;
+  const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
   const showRotatePrompt = isMobile && isPortrait;
 
-  // Verificar si la misión ya fue completada
   useEffect(() => {
     const verificar = async () => {
       try {
@@ -603,7 +680,7 @@ export default function SalaIsla({ onSalir }) {
         if (user) {
           const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists()) {
-            const data          = userDoc.data();
+            const data = userDoc.data();
             const completedRooms = data.completedRooms || [];
             if (completedRooms.includes("isla")) {
               setMisionCompletadaPreviamente(true);
@@ -612,26 +689,21 @@ export default function SalaIsla({ onSalir }) {
             }
           }
         }
-      } catch (error) {
-        console.error("Error verificando misión:", error);
-      }
+      } catch (error) { console.error("Error verificando misión:", error); }
     };
     verificar();
   }, []);
 
-  // Guardar logro en Firebase
   const handleCofreOpenComplete = useCallback(async () => {
     try {
       const user = auth.currentUser;
       if (user) {
         await updateDoc(doc(db, "users", user.uid), {
-          achievements:  arrayUnion("explorador_estelar"),
+          achievements: arrayUnion("explorador_estelar"),
           completedRooms: arrayUnion("isla"),
         });
       }
-    } catch (error) {
-      console.error("Error guardando logro:", error);
-    }
+    } catch (error) { console.error("Error guardando logro:", error); }
     setTimeout(() => setModalLogro(true), 500);
   }, []);
 
@@ -641,9 +713,9 @@ export default function SalaIsla({ onSalir }) {
     if (cofreRef.current?.closeCofre) cofreRef.current.closeCofre();
   }, []);
 
-  const handleSalirDashboard    = useCallback(() => { if (onSalir) onSalir(); }, [onSalir]);
+  const handleSalirDashboard = useCallback(() => { if (onSalir) onSalir(); }, [onSalir]);
   const handleContinuarExplorando = useCallback(() => setModalMisionCompletada(false), []);
-  const handleCofreCloseComplete  = useCallback(() => setCofreAbierto(false), []);
+  const handleCofreCloseComplete = useCallback(() => setCofreAbierto(false), []);
 
   const handleCristalNearby = useCallback((id, isNear) => {
     setNearbyCristalId((prev) => {
@@ -655,45 +727,23 @@ export default function SalaIsla({ onSalir }) {
 
   const handleCofreNearby = useCallback((isNear) => setIsNearCofre(isNear), []);
 
-  // 🎯 handleInteract con animaciones
   const handleInteract = useCallback(() => {
     if (modalOpen) return;
-
-    // ── Recoger cristal ──
     if (nearbyCristalId !== null && !collectedIds.includes(nearbyCristalId)) {
       const data = CRISTAL_DATA.find((c) => c.id === nearbyCristalId);
       if (!data) return;
-
-      const enLaMitad = () => {
-        setCollectedIds((prev) => [...prev, nearbyCristalId]);
-        playSound("cristal");
-      };
-
-      const alTerminar = () => {
-        setModalCristal(data);
-      };
-
+      const enLaMitad = () => { setCollectedIds((prev) => [...prev, nearbyCristalId]); playSound("cristal"); };
+      const alTerminar = () => setModalCristal(data);
       if (playerRef.current?.playAnimation) {
         playerRef.current.playAnimation("tomar", alTerminar, enLaMitad);
-      } else {
-        enLaMitad();
-        alTerminar();
-      }
+      } else { enLaMitad(); alTerminar(); }
       return;
     }
-
-    // ── Cofre ──
     if (isNearCofre) {
-      if (!allCollected) {
-        setModalCofreBloq(true);
-        playSound("bloqueado");
-      } else if (!cofreAbierto) {
-        setCofreAbierto(true);
-        playSound("cofre");
-
-        if (playerRef.current?.playAnimation) {
-          playerRef.current.playAnimation("abrir");
-        }
+      if (!allCollected) { setModalCofreBloq(true); playSound("bloqueado"); }
+      else if (!cofreAbierto) {
+        setCofreAbierto(true); playSound("cofre");
+        if (playerRef.current?.playAnimation) playerRef.current.playAnimation("abrir");
       }
     }
   }, [modalOpen, nearbyCristalId, collectedIds, isNearCofre, allCollected, cofreAbierto, playerRef]);
@@ -702,107 +752,41 @@ export default function SalaIsla({ onSalir }) {
 
   function playSound(tipo) {
     try {
-      const ctx  = new (window.AudioContext || window.webkitAudioContext)();
-      const osc  = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator(); const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
       if (tipo === "cristal") {
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.3);
-        gain.gain.setValueAtTime(0.15, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc.type = "sine"; osc.frequency.setValueAtTime(880, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
         osc.start(); osc.stop(ctx.currentTime + 0.5);
       } else if (tipo === "bloqueado") {
-        osc.type = "square";
-        osc.frequency.setValueAtTime(200, ctx.currentTime);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.type = "square"; osc.frequency.setValueAtTime(200, ctx.currentTime);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
         osc.start(); osc.stop(ctx.currentTime + 0.3);
       } else if (tipo === "cofre") {
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(520, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1400, ctx.currentTime + 0.6);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+        osc.type = "triangle"; osc.frequency.setValueAtTime(520, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(1400, ctx.currentTime + 0.6);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
         osc.start(); osc.stop(ctx.currentTime + 0.8);
       }
     } catch (_) {}
   }
 
   const showECristal = nearbyCristalId !== null && !collectedIds.includes(nearbyCristalId) && !modalOpen;
-  const showECofre   = isNearCofre && !modalOpen && !cofreAbierto && !cofreYaAbierto;
+  const showECofre = isNearCofre && !modalOpen && !cofreAbierto && !cofreYaAbierto;
 
   return (
     <>
-      <div
-        style={{
-          width: "100vw", height: "100vh",
-          overflow: "hidden", position: "absolute", inset: 0,
-          visibility:   showRotatePrompt ? "hidden" : "visible",
-          pointerEvents: showRotatePrompt ? "none"   : "auto",
-        }}
-      >
-        <Canvas
-          style={{ width: "100%", height: "100%" }}
-          camera={{ position: [0, 2, 10], fov: 60 }}
-          shadows
-          gl={{ powerPreference: "high-performance", onContextLost: (e) => e.preventDefault() }}
-          frameloop={showRotatePrompt ? "never" : "always"}
-        >
-          <MisionScene
-            playerRef={playerRef}
-            mobileControls={mobileControls}
-            collectedIds={collectedIds}
-            onCristalNearby={handleCristalNearby}
-            nearbyCristalId={nearbyCristalId}
-            onCofreNearby={handleCofreNearby}
-            allCollected={allCollected}
-            cofreAbierto={cofreAbierto}
-            onCofreOpenComplete={handleCofreOpenComplete}
-            onCofreCloseComplete={handleCofreCloseComplete}
-            cofreRef={cofreRef}
-          />
+      <div style={{ width: "100vw", height: "100vh", overflow: "hidden", position: "absolute", inset: 0, visibility: showRotatePrompt ? "hidden" : "visible", pointerEvents: showRotatePrompt ? "none" : "auto" }}>
+        <Canvas style={{ width: "100%", height: "100%" }} camera={{ position: [0, 2, 10], fov: 60 }} shadows gl={{ powerPreference: "high-performance", onContextLost: (e) => e.preventDefault() }} frameloop={showRotatePrompt ? "never" : "always"}>
+          <MisionScene playerRef={playerRef} mobileControls={mobileControls} collectedIds={collectedIds} onCristalNearby={handleCristalNearby} nearbyCristalId={nearbyCristalId} onCofreNearby={handleCofreNearby} allCollected={allCollected} cofreAbierto={cofreAbierto} onCofreOpenComplete={handleCofreOpenComplete} onCofreCloseComplete={handleCofreCloseComplete} cofreRef={cofreRef} />
         </Canvas>
-
-        {!modalOpen && (
-          <HUDMision
-            collectedIds={collectedIds}
-            showECristal={showECristal}
-            showECofre={showECofre}
-            isMobile={isMobile}
-            onInteractMobile={handleInteract}
-            cofreYaAbierto={cofreYaAbierto}
-            misionCompletada={misionCompletadaPreviamente}
-          />
-        )}
-
-        {isMobile && !showRotatePrompt && !modalOpen && (
-          <MobileControlsOverlay controls={mobileControls} />
-        )}
-
-        {modalMisionCompletada && (
-          <ModalMisionCompletada
-            onContinuar={handleContinuarExplorando}
-            onSalir={handleSalirDashboard}
-          />
-        )}
-        {modalCristal && (
-          <ModalCristal
-            data={modalCristal}
-            totalCollected={collectedIds.length}
-            onContinuar={() => setModalCristal(null)}
-          />
-        )}
-        {modalCofreBloq && (
-          <ModalCofreBloqueado onClose={() => setModalCofreBloq(false)} />
-        )}
-        {modalLogro && (
-          <ModalLogroFinal onClose={handleCerrarLogro} onSalir={handleSalirDashboard} />
-        )}
+        {!modalOpen && <HUDMision collectedIds={collectedIds} showECristal={showECristal} showECofre={showECofre} isMobile={isMobile} onInteractMobile={handleInteract} cofreYaAbierto={cofreYaAbierto} misionCompletada={misionCompletadaPreviamente} />}
+        {isMobile && !showRotatePrompt && !modalOpen && <MobileControlsOverlay controls={mobileControls} />}
+        {modalMisionCompletada && <ModalMisionCompletada onContinuar={handleContinuarExplorando} onSalir={handleSalirDashboard} />}
+        {modalCristal && <ModalCristal data={modalCristal} totalCollected={collectedIds.length} onContinuar={() => setModalCristal(null)} />}
+        {modalCofreBloq && <ModalCofreBloqueado onClose={() => setModalCofreBloq(false)} />}
+        {modalLogro && <ModalLogroFinal onClose={handleCerrarLogro} onSalir={handleSalirDashboard} />}
       </div>
-
       {showRotatePrompt && <RotatePrompt />}
     </>
   );
@@ -823,108 +807,27 @@ function useKeyE(callback) {
 // ESTILOS
 // ─────────────────────────────────────────────────────────
 const styles = {
-  overlay: {
-    position: "absolute", inset: 0,
-    background: "rgba(10, 8, 20, 0.80)",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    zIndex: 1000, backdropFilter: "blur(6px)",
-  },
-  modal: {
-    background: "linear-gradient(160deg, #0f0a1a 0%, #1a1030 100%)",
-    border: "1.5px solid rgba(168, 85, 247, 0.45)",
-    borderRadius: 20,
-    padding: "36px 32px 28px",
-    maxWidth: 420, width: "90%",
-    textAlign: "center",
-    boxShadow: "0 8px 48px rgba(0,0,0,0.7), 0 0 40px rgba(168,85,247,0.08)",
-    animation: "fadeInModal 0.35s ease",
-  },
-  modalIconBig: {
-    marginBottom: 10, display: "flex", justifyContent: "center",
-    filter: "drop-shadow(0 2px 8px rgba(168,85,247,0.5))",
-  },
-  modalTitulo: {
-    fontSize: 22, fontWeight: 700,
-    margin: "0 0 12px", letterSpacing: "0.03em",
-    fontFamily: "'Segoe UI', sans-serif",
-    color: "#a855f7",
-  },
-  modalMensaje: {
-    color: "#d8c8f0", fontSize: 15, lineHeight: 1.65,
-    margin: "0 0 20px", fontFamily: "'Segoe UI', sans-serif",
-  },
-  contadorBadge: {
-    display: "inline-block",
-    borderRadius: 30,
-    padding: "5px 18px", fontSize: 13, fontWeight: 600,
-    marginBottom: 20, letterSpacing: "0.04em",
-  },
-  btnContinuar: {
-    color: "#0f0a1a", border: "none", borderRadius: 30,
-    padding: "11px 36px", fontSize: 15, fontWeight: 700,
-    cursor: "pointer", letterSpacing: "0.04em", transition: "opacity 0.2s",
-  },
-  hudContador: {
-    position: "absolute", top: 18, left: "50%", transform: "translateX(-50%)",
-    background: "rgba(10, 8, 20, 0.72)",
-    border: "1px solid rgba(168, 85, 247, 0.35)",
-    borderRadius: 30, padding: "7px 20px",
-    display: "flex", alignItems: "center", gap: 6,
-    zIndex: 100, backdropFilter: "blur(8px)",
-  },
-  hudTexto: {
-    fontSize: 14, fontWeight: 600,
-    fontFamily: "'Segoe UI', sans-serif", letterSpacing: "0.04em",
-  },
-  hudMision: {
-    position: "absolute", top: 60, left: "50%", transform: "translateX(-50%)",
-    background: "rgba(10, 8, 20, 0.65)",
-    border: "1px solid rgba(168, 85, 247, 0.2)",
-    borderRadius: 20, padding: "6px 18px",
-    color: "#c4a0f0", fontSize: 12,
-    fontFamily: "'Segoe UI', sans-serif",
-    zIndex: 100, backdropFilter: "blur(6px)",
-    whiteSpace: "nowrap", maxWidth: "90vw",
-    overflow: "hidden", textOverflow: "ellipsis",
-  },
-  promptE: {
-    position: "absolute", bottom: 120, left: "50%", transform: "translateX(-50%)",
-    display: "flex", alignItems: "center", gap: 10,
-    background: "rgba(10, 8, 20, 0.85)",
-    border: "1px solid rgba(168, 85, 247, 0.4)",
-    borderRadius: 30, padding: "10px 22px",
-    zIndex: 100, backdropFilter: "blur(8px)",
-    animation: "pulsePrompt 1.8s ease-in-out infinite",
-  },
-  kbd: {
-    background: "#a855f7", color: "#0f0a1a",
-    borderRadius: 6, padding: "3px 10px",
-    fontSize: 14, fontWeight: 800, fontFamily: "monospace",
-  },
-  promptTexto: {
-    color: "#a855f7", fontSize: 14, fontWeight: 600,
-    fontFamily: "'Segoe UI', sans-serif",
-  },
-  btnInteractMobile: {
-    background: "linear-gradient(135deg, #9333ea, #a855f7)",
-    color: "#0f0a1a", border: "none", borderRadius: 25,
-    padding: "10px 24px", fontSize: 15, fontWeight: 700,
-    cursor: "pointer", letterSpacing: "0.03em",
-    display: "flex", alignItems: "center",
-  },
+  overlay: { position: "absolute", inset: 0, background: "rgba(10, 8, 20, 0.80)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(6px)" },
+  modal: { background: "linear-gradient(160deg, #0f0a1a 0%, #1a1030 100%)", border: "1.5px solid rgba(168, 85, 247, 0.45)", borderRadius: 20, padding: "36px 32px 28px", maxWidth: 420, width: "90%", textAlign: "center", boxShadow: "0 8px 48px rgba(0,0,0,0.7), 0 0 40px rgba(168,85,247,0.08)", animation: "fadeInModal 0.35s ease" },
+  modalIconBig: { marginBottom: 10, display: "flex", justifyContent: "center", filter: "drop-shadow(0 2px 8px rgba(168,85,247,0.5))" },
+  modalTitulo: { fontSize: 22, fontWeight: 700, margin: "0 0 12px", letterSpacing: "0.03em", fontFamily: "'Segoe UI', sans-serif", color: "#a855f7" },
+  modalMensaje: { color: "#d8c8f0", fontSize: 15, lineHeight: 1.65, margin: "0 0 20px", fontFamily: "'Segoe UI', sans-serif" },
+  contadorBadge: { display: "inline-block", borderRadius: 30, padding: "5px 18px", fontSize: 13, fontWeight: 600, marginBottom: 20, letterSpacing: "0.04em" },
+  btnContinuar: { color: "#0f0a1a", border: "none", borderRadius: 30, padding: "11px 36px", fontSize: 15, fontWeight: 700, cursor: "pointer", letterSpacing: "0.04em", transition: "opacity 0.2s" },
+  hudContador: { position: "absolute", top: 18, left: "50%", transform: "translateX(-50%)", background: "rgba(10, 8, 20, 0.72)", border: "1px solid rgba(168, 85, 247, 0.35)", borderRadius: 30, padding: "7px 20px", display: "flex", alignItems: "center", gap: 6, zIndex: 100, backdropFilter: "blur(8px)" },
+  hudTexto: { fontSize: 14, fontWeight: 600, fontFamily: "'Segoe UI', sans-serif", letterSpacing: "0.04em" },
+  hudMision: { position: "absolute", top: 60, left: "50%", transform: "translateX(-50%)", background: "rgba(10, 8, 20, 0.65)", border: "1px solid rgba(168, 85, 247, 0.2)", borderRadius: 20, padding: "6px 18px", color: "#c4a0f0", fontSize: 12, fontFamily: "'Segoe UI', sans-serif", zIndex: 100, backdropFilter: "blur(6px)", whiteSpace: "nowrap", maxWidth: "90vw", overflow: "hidden", textOverflow: "ellipsis" },
+  promptE: { position: "absolute", bottom: 120, left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 10, background: "rgba(10, 8, 20, 0.85)", border: "1px solid rgba(168, 85, 247, 0.4)", borderRadius: 30, padding: "10px 22px", zIndex: 100, backdropFilter: "blur(8px)", animation: "pulsePrompt 1.8s ease-in-out infinite" },
+  kbd: { background: "#a855f7", color: "#0f0a1a", borderRadius: 6, padding: "3px 10px", fontSize: 14, fontWeight: 800, fontFamily: "monospace" },
+  promptTexto: { color: "#a855f7", fontSize: 14, fontWeight: 600, fontFamily: "'Segoe UI', sans-serif" },
+  btnInteractMobile: { background: "linear-gradient(135deg, #9333ea, #a855f7)", color: "#0f0a1a", border: "none", borderRadius: 25, padding: "10px 24px", fontSize: 15, fontWeight: 700, cursor: "pointer", letterSpacing: "0.03em", display: "flex", alignItems: "center" },
 };
 
 // CSS global para animaciones
 const styleTag = document.createElement("style");
 styleTag.textContent = `
-  @keyframes fadeInModal {
-    from { opacity: 0; transform: scale(0.92) translateY(10px); }
-    to   { opacity: 1; transform: scale(1)    translateY(0);    }
-  }
-  @keyframes pulsePrompt {
-    0%, 100% { opacity: 1;    }
-    50%      { opacity: 0.65; }
-  }
+  @keyframes fadeInModal { from { opacity: 0; transform: scale(0.92) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  @keyframes pulsePrompt { 0%, 100% { opacity: 1; } 50% { opacity: 0.65; } }
 `;
 if (!document.head.querySelector("[data-isla-styles]")) {
   styleTag.setAttribute("data-isla-styles", "true");

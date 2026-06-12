@@ -449,7 +449,7 @@ function MisionScene({
     zMin: -12,     // ← 14 unidades atrás del inicio
     zMax: 24.2     // ← 6 unidades adelante del inicio 
   }}
-  avatarScale={1.5}
+  avatarScale={1.2}
 />
     </>
   );

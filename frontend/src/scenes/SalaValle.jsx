@@ -437,8 +437,8 @@ function MisionScene({
 
       <PlayerController
         controls={mobileControls}
-        startPosition={[6, -6.3, 19]}  // ✅ Corregido: mismo Y que floorY
-        floorY={-6.7}
+        startPosition={[17, -8.1, 27]}  // ✅ Corregido: mismo Y que floorY
+        floorY={-6.8}
         playerRef={playerRef}
         limites={{ 
         xMin: -15,    // ← Solo 11 unidades a la izquierda del inicio

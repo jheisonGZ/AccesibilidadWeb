@@ -4,10 +4,11 @@
 
 import { useEffect, useState, useRef, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { doc, collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import {
+  doc, collection, query, orderBy, limit, onSnapshot,
+} from "firebase/firestore";
 import { auth, db } from "../services/firebase";
 
-// Lazy fuera del componente — correcto, no se recrean en cada render
 const SalaIsla   = lazy(() => import("../scenes/Salaisla"));
 const SalaPlaya  = lazy(() => import("../scenes/SalaPlaya"));
 const SalaBosque = lazy(() => import("../scenes/SalaBosque"));
@@ -20,6 +21,7 @@ import {
   TrendingUp, TrendingDown, Minus,
   Star, Zap, CircleHelp,
   Trees, Waves, Mountain, Palmtree,
+  Volume2, VolumeX, Trophy, X,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import "../styles/scene.css";
@@ -43,6 +45,25 @@ const EMOTION_AUDIO = {
 
 const AUDIO_VOLUME = 0.11;
 
+// ── Logros — misma lógica que Dashboard ──────────────────────────────────────
+
+const ALL_ACHIEVEMENTS = [
+  { id: "primera_sesion", label: "Primera sesión",  icon: "🎯", desc: "Completaste tu primera evaluación" },
+  { id: "racha_3",        label: "Racha de 3 días", icon: "🔥", desc: "3 días consecutivos de sesiones"   },
+  { id: "sesiones_10",    label: "10 sesiones",     icon: "⚡", desc: "Has completado 10 sesiones"        },
+  { id: "bienestar_alto", label: "Bienestar alto",  icon: "💚", desc: "Score de bienestar mayor al 80%"   },
+];
+
+function getTrophy(count) {
+  if (count >= 4) return { color: "#AFA9EC", label: "MAESTRO",   sub: "Todos los logros" };
+  if (count >= 3) return { color: "#FFD700", label: "ORO",       sub: "Casi completo"    };
+  if (count >= 2) return { color: "#c0c0c0", label: "PLATA",     sub: "Buen camino"      };
+  if (count >= 1) return { color: "#cd7f32", label: "BRONCE",    sub: "Primer logro"     };
+  return                  { color: "#555",   label: "SIN RANGO", sub: "Juega para ganar" };
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 const getTrend = (score) => {
   if (score === null) return { Icon: Minus,        color: "#888",    label: "---"       };
   if (score <= 4)     return { Icon: TrendingDown, color: "#00ff88", label: "MEJORANDO" };
@@ -54,13 +75,9 @@ const getTrend = (score) => {
 const getHealthPct   = (score) => score === null ? 100 : Math.max(5, Math.round(((21 - score) / 21) * 100));
 const getHealthColor = (pct)   => pct > 60 ? "#00ff88" : pct > 30 ? "#ffcc00" : "#ff4466";
 
-// ── Helper: fade-in de volumen ────────────────────────────────────────────────
-
 function fadeIn(audio, targetVolume, durationMs = 2000) {
-  const steps    = 20;
-  const stepTime = durationMs / steps;
-  const stepVol  = targetVolume / steps;
-  let   current  = 0;
+  const steps = 20, stepTime = durationMs / steps, stepVol = targetVolume / steps;
+  let current = 0;
   const interval = setInterval(() => {
     current += stepVol;
     if (current >= targetVolume) { audio.volume = targetVolume; clearInterval(interval); }
@@ -69,24 +86,16 @@ function fadeIn(audio, targetVolume, durationMs = 2000) {
   return interval;
 }
 
-// ── Helper: volver a orientación portrait ─────────────────────────────────────
-
 const unlockToPortrait = async () => {
-  try {
-    if (screen.orientation?.lock) await screen.orientation.lock("portrait");
-  } catch { /* ignorar */ }
-  finally {
-    if (screen.orientation?.unlock) screen.orientation.unlock();
-  }
+  try { if (screen.orientation?.lock) await screen.orientation.lock("portrait"); }
+  catch { /* ignorar */ }
+  finally { if (screen.orientation?.unlock) screen.orientation.unlock(); }
 };
 
-// ── Avatar con fallback graceful ──────────────────────────────────────────────
-// Si photoURL falla (Tracking Prevention, CORS, etc.), oculta la imagen
-// y muestra la inicial automáticamente, sin imagen rota visible.
+// ── HudAvatar ─────────────────────────────────────────────────────────────────
+
 function HudAvatar({ photoURL, initial, glowColor }) {
   const [imgFailed, setImgFailed] = useState(false);
-
-  // Resetear si cambia la URL (cambio de cuenta)
   useEffect(() => { setImgFailed(false); }, [photoURL]);
 
   return (
@@ -105,28 +114,84 @@ function HudAvatar({ photoURL, initial, glowColor }) {
   );
 }
 
+// ── AchievementsDrawer ────────────────────────────────────────────────────────
+
+function AchievementsDrawer({ achievements, totalSess, lastScore, onClose }) {
+  const count     = achievements.length;
+  const trophy    = getTrophy(count);
+  const healthPct = getHealthPct(lastScore);
+
+  return (
+    <div className="hud-drawer" onClick={(e) => e.stopPropagation()}>
+      <div className="hud-drawer-header">
+        <Trophy size={13} color={trophy.color} strokeWidth={2} />
+        <span className="hud-drawer-title" style={{ color: trophy.color }}>
+          {trophy.label}
+        </span>
+        <span className="hud-drawer-sub">{count}/4 LOGROS</span>
+        <button className="hud-drawer-close" onClick={onClose}>
+          <X size={12} strokeWidth={2.5} />
+        </button>
+      </div>
+
+      <div className="hud-drawer-stats">
+        <div className="hud-drawer-stat">
+          <span className="hud-drawer-stat-val" style={{ color: "#00ff88" }}>{healthPct}%</span>
+          <span className="hud-drawer-stat-lbl">BIENESTAR</span>
+        </div>
+        <div className="hud-drawer-stat">
+          <span className="hud-drawer-stat-val" style={{ color: "#a78bfa" }}>{totalSess}</span>
+          <span className="hud-drawer-stat-lbl">SESIONES</span>
+        </div>
+        <div className="hud-drawer-stat">
+          <span className="hud-drawer-stat-val" style={{ color: trophy.color }}>{count}</span>
+          <span className="hud-drawer-stat-lbl">LOGROS</span>
+        </div>
+      </div>
+
+      <div className="hud-drawer-list">
+        {ALL_ACHIEVEMENTS.map((ach) => {
+          const unlocked = achievements.includes(ach.id);
+          return (
+            <div
+              key={ach.id}
+              className={`hud-drawer-item${unlocked ? " hud-drawer-item--unlocked" : ""}`}
+            >
+              <span className="hud-drawer-item-icon">{unlocked ? ach.icon : "🔒"}</span>
+              <div className="hud-drawer-item-info">
+                <span className="hud-drawer-item-label">{ach.label}</span>
+                <span className="hud-drawer-item-desc">{ach.desc}</span>
+              </div>
+              {unlocked && <span className="hud-drawer-item-check">✓</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Scene() {
   const navigate        = useNavigate();
   const { user, alias } = useAuth();
 
-  const [emotion,    setEmotion]    = useState(null);
-  const [loading,    setLoading]    = useState(true);
-  const [lastScore,  setLastScore]  = useState(null);
-  const [totalSess,  setTotalSess]  = useState(0);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [emotion,      setEmotion]      = useState(null);
+  const [loading,      setLoading]      = useState(true);
+  const [lastScore,    setLastScore]    = useState(null);
+  const [totalSess,    setTotalSess]    = useState(0);
+  const [achievements, setAchievements] = useState([]);
+  const [newBadge,     setNewBadge]     = useState(false);
+  const [isHelpOpen,   setIsHelpOpen]   = useState(false);
+  const [isMuted,      setIsMuted]      = useState(false);
+  const [drawerOpen,   setDrawerOpen]   = useState(false);
 
-  const audioRef     = useRef(null);
-  const fadeInterval = useRef(null);
+  const audioRef      = useRef(null);
+  const fadeInterval  = useRef(null);
+  const prevAchCount  = useRef(null);
 
   usePageReady();
-
-  // 🔍 Log de montaje/desmontaje — eliminar en producción final
-  useEffect(() => {
-    console.log("[Scene] Montada");
-    return () => console.log("[Scene] Desmontada");
-  }, []);
 
   // Limpieza global al desmontar
   useEffect(() => {
@@ -141,27 +206,29 @@ export default function Scene() {
     };
   }, []);
 
-  // onSnapshot reemplaza getDoc — sincronización en tiempo real con Firestore
+  // Firestore — emoción + logros en tiempo real
   useEffect(() => {
     const u = auth.currentUser;
     if (!u) { navigate("/"); return; }
 
-    const userRef = doc(db, "users", u.uid);
-
     const unsub = onSnapshot(
-      userRef,
+      doc(db, "users", u.uid),
       (snap) => {
-        const newEmotion = snap.exists()
-          ? (snap.data().lastEmotion || "neutro")
-          : (localStorage.getItem("emotion") || "neutro");
-
-        // 🔍 Log temporal — eliminar en producción final
-        console.log("[Scene] Emotion desde Firestore:", newEmotion);
+        const data       = snap.exists() ? snap.data() : {};
+        const newEmotion = data.lastEmotion || localStorage.getItem("emotion") || "neutro";
+        const newAchs    = data.achievements ?? [];
 
         setEmotion(newEmotion);
+
+        // Detectar logro nuevo para activar badge parpadeante
+        if (prevAchCount.current !== null && newAchs.length > prevAchCount.current) {
+          setNewBadge(true);
+        }
+        prevAchCount.current = newAchs.length;
+        setAchievements(newAchs);
         setLoading(false);
       },
-      (_err) => {
+      () => {
         setEmotion(localStorage.getItem("emotion") || "neutro");
         setLoading(false);
       }
@@ -170,61 +237,7 @@ export default function Scene() {
     return () => unsub();
   }, [navigate]);
 
-  // Audio ambiental con cleanup seguro de listeners huérfanos
-  useEffect(() => {
-    if (!emotion) return;
-
-    const url = EMOTION_AUDIO[emotion];
-    if (!url) return;
-
-    let cancelled = false;
-
-    const audio      = new Audio(url);
-    audio.loop       = true;
-    audio.volume     = 0;
-    audioRef.current = audio;
-
-    const removeInteractionListeners = () => {
-      window.removeEventListener("click",      onInteraction);
-      window.removeEventListener("touchstart", onInteraction);
-      document.removeEventListener("keydown",  onInteraction);
-    };
-
-    const onInteraction = () => {
-      if (cancelled) return;
-      audio.play()
-        .then(() => {
-          if (!cancelled) fadeInterval.current = fadeIn(audio, AUDIO_VOLUME, 2000);
-        })
-        .catch(() => {});
-      removeInteractionListeners();
-    };
-
-    const startAudio = () => {
-      audio.play()
-        .then(() => {
-          if (!cancelled) fadeInterval.current = fadeIn(audio, AUDIO_VOLUME, 2000);
-        })
-        .catch(() => {
-          window.addEventListener("click",      onInteraction);
-          window.addEventListener("touchstart", onInteraction);
-          document.addEventListener("keydown",  onInteraction);
-        });
-    };
-
-    startAudio();
-
-    return () => {
-      cancelled = true;
-      removeInteractionListeners();
-      clearInterval(fadeInterval.current);
-      audio.pause();
-      audio.src        = "";
-      audioRef.current = null;
-    };
-  }, [emotion]);
-
-  // Listener en tiempo real de evaluaciones
+  // Firestore — evaluaciones
   useEffect(() => {
     const u = auth.currentUser;
     if (!u) return;
@@ -239,6 +252,63 @@ export default function Scene() {
     });
     return () => unsub();
   }, []);
+
+  // Audio ambiental
+  useEffect(() => {
+    if (!emotion) return;
+    const url = EMOTION_AUDIO[emotion];
+    if (!url) return;
+
+    let cancelled = false;
+    const audio      = new Audio(url);
+    audio.loop       = true;
+    audio.volume     = 0;
+    audioRef.current = audio;
+
+    const removeLst = () => {
+      window.removeEventListener("click",      onInt);
+      window.removeEventListener("touchstart", onInt);
+      document.removeEventListener("keydown",  onInt);
+    };
+    const onInt = () => {
+      if (cancelled) return;
+      audio.play()
+        .then(() => { if (!cancelled && !isMuted) fadeInterval.current = fadeIn(audio, AUDIO_VOLUME, 2000); })
+        .catch(() => {});
+      removeLst();
+    };
+    audio.play()
+      .then(() => { if (!cancelled && !isMuted) fadeInterval.current = fadeIn(audio, AUDIO_VOLUME, 2000); })
+      .catch(() => {
+        window.addEventListener("click",      onInt);
+        window.addEventListener("touchstart", onInt);
+        document.addEventListener("keydown",  onInt);
+      });
+
+    return () => {
+      cancelled = true;
+      removeLst();
+      clearInterval(fadeInterval.current);
+      audio.pause();
+      audio.src        = "";
+      audioRef.current = null;
+    };
+  }, [emotion]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
+  const handleMute = () => {
+    if (!audioRef.current) return;
+    const next = !isMuted;
+    clearInterval(fadeInterval.current);
+    audioRef.current.volume = next ? 0 : AUDIO_VOLUME;
+    setIsMuted(next);
+  };
+
+  const handleTrophy = () => {
+    setDrawerOpen((v) => !v);
+    if (newBadge) setNewBadge(false);
+  };
 
   const handleLogout = async () => {
     const result = await Swal.fire({
@@ -271,9 +341,10 @@ export default function Scene() {
     navigate("/home");
   };
 
+  // ── Render ────────────────────────────────────────────────────────────────
+
   if (loading) return <div style={{ background: "#080e08", height: "100vh" }} />;
 
-  // key= ELIMINADO — ya no destruye el canvas WebGL en cada cambio de emoción
   const SceneComponent =
     emotion === "ansiedad" ? SalaIsla  :
     emotion === "estres"   ? SalaValle :
@@ -285,31 +356,23 @@ export default function Scene() {
   const healthPct = getHealthPct(lastScore);
   const hpColor   = getHealthColor(healthPct);
   const initial   = alias?.charAt(0).toUpperCase();
-
-  // 🔍 Log temporal de coherencia — eliminar en producción final
-  console.log("[Scene] Render →", { emotion });
+  const trophy    = getTrophy(achievements.length);
 
   return (
-    <div style={{ height: "100vh", position: "relative", overflow: "hidden" }}>
+    <div
+      style={{ height: "100vh", position: "relative", overflow: "hidden" }}
+      onClick={() => drawerOpen && setDrawerOpen(false)}
+    >
 
       {/* ── PANEL IZQUIERDO ── */}
       <div className="hud-panel hud-tl">
         <div className="hud-player-header">
-
-          {/* HudAvatar maneja el fallback de Tracking Prevention internamente */}
-          <HudAvatar
-            photoURL={user?.photoURL}
-            initial={initial}
-            glowColor={emo.glow}
-          />
-
-          {/* El badge de nivel va fuera de HudAvatar para no romper el layout del HUD */}
+          <HudAvatar photoURL={user?.photoURL} initial={initial} glowColor={emo.glow} />
           <div style={{ position: "relative" }}>
             <div className="hud-level-badge" style={{ background: emo.color, boxShadow: `0 0 6px ${emo.glow}` }}>
               {emo.level}
             </div>
           </div>
-
           <div className="hud-player-info">
             <div className="hud-callsign">{alias?.toUpperCase()}</div>
             <div className="hud-status" style={{ color: emo.color }}>
@@ -318,14 +381,20 @@ export default function Scene() {
             </div>
           </div>
         </div>
+
         <div className="hud-bar-row">
           <Heart size={11} color={hpColor} />
           <span className="hud-bar-label" style={{ color: hpColor }}>BIENESTAR</span>
           <div className="hud-bar-track">
-            <div className="hud-bar-fill" style={{ width: `${healthPct}%`, background: `linear-gradient(90deg, ${hpColor}88, ${hpColor})`, boxShadow: `0 0 8px ${hpColor}88` }} />
+            <div className="hud-bar-fill" style={{
+              width: `${healthPct}%`,
+              background: `linear-gradient(90deg, ${hpColor}88, ${hpColor})`,
+              boxShadow: `0 0 8px ${hpColor}88`,
+            }} />
           </div>
           <span className="hud-bar-val" style={{ color: hpColor }}>{healthPct}%</span>
         </div>
+
         <div className="hud-bar-row">
           <Star size={11} color="#a78bfa" />
           <span className="hud-bar-label" style={{ color: "#a78bfa" }}>EXP</span>
@@ -337,7 +406,8 @@ export default function Scene() {
       </div>
 
       {/* ── PANEL DERECHO ── */}
-      <div className="hud-panel hud-tr">
+      <div className="hud-panel hud-tr" onClick={(e) => e.stopPropagation()}>
+
         <div className="hud-zone" style={{ borderColor: emo.color + "55", boxShadow: `inset 0 0 20px ${emo.glow}0a` }}>
           <div className="hud-zone-title">ZONA ACTIVA</div>
           <div className="hud-zone-name" style={{ color: emo.color, textShadow: `0 0 12px ${emo.glow}` }}>
@@ -345,6 +415,7 @@ export default function Scene() {
             {emo.label}
           </div>
         </div>
+
         <div className="hud-score-row">
           <Zap size={12} color={trend.color} />
           <span className="hud-score-label" style={{ color: trend.color }}>
@@ -355,11 +426,38 @@ export default function Scene() {
             {trend.label}
           </span>
         </div>
+
         <div className="hud-actions">
           <button className="hud-btn hud-btn-primary" onClick={handleBase}>
             <LayoutDashboard size={13} strokeWidth={2} />
             BASE
           </button>
+
+          {/* TROFEOS */}
+          <button
+            className={`hud-btn hud-btn-trophy${drawerOpen ? " hud-btn-trophy--active" : ""}`}
+            onClick={handleTrophy}
+            title="Logros"
+            style={{ position: "relative" }}
+          >
+            <Trophy size={13} strokeWidth={2} color={trophy.color} />
+            <span className="hud-trophy-count" style={{ color: trophy.color }}>
+              {achievements.length}/4
+            </span>
+            {newBadge && <span className="hud-badge-new" />}
+          </button>
+
+          {/* VOLUMEN */}
+          <button
+            className={`hud-btn hud-btn-volume${isMuted ? " hud-btn-volume--muted" : ""}`}
+            onClick={handleMute}
+            title={isMuted ? "Activar sonido" : "Silenciar"}
+          >
+            {isMuted
+              ? <VolumeX size={13} strokeWidth={2} />
+              : <Volume2 size={13} strokeWidth={2} />}
+          </button>
+
           <button
             className="hud-btn"
             onClick={() => setIsHelpOpen(true)}
@@ -368,26 +466,32 @@ export default function Scene() {
           >
             <CircleHelp size={13} strokeWidth={2} />
           </button>
+
           <button className="hud-btn hud-btn-danger" onClick={handleLogout}>
             <LogOut size={13} strokeWidth={2} />
             SALIR
           </button>
         </div>
+
+        {drawerOpen && (
+          <AchievementsDrawer
+            achievements={achievements}
+            totalSess={totalSess}
+            lastScore={lastScore}
+            onClose={() => setDrawerOpen(false)}
+          />
+        )}
       </div>
 
       {/* ── ESCENA 3D ── */}
       {SceneComponent ? (
         <Suspense fallback={<div style={{ background: "#080e08", height: "100vh" }} />}>
-          <SceneComponent
-            emotion={emotion}
-            onSalir={handleBase}
-          />
+          <SceneComponent emotion={emotion} onSalir={handleBase} />
         </Suspense>
       ) : (
         <div style={{ background: "#080e08", height: "100vh" }} />
       )}
 
-      {/* ── OVERLAY AYUDA ── */}
       {isHelpOpen && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 9998,

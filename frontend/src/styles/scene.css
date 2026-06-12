@@ -1,6 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    scene.hud.css — src/styles/scene.hud.css
-   HUD rediseñado — estilo videojuego, compacto en móvil
 ───────────────────────────────────────────────────────────────────────────── */
 
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
@@ -242,7 +241,6 @@
   border-color: rgba(0,200,255,0.35);
   color: #00eaff;
 }
-
 .hud-btn-primary:hover {
   background: rgba(0,200,255,0.22);
   border-color: rgba(0,200,255,0.7);
@@ -255,7 +253,6 @@
   border-color: rgba(255,60,80,0.35);
   color: #ff4466;
 }
-
 .hud-btn-danger:hover {
   background: rgba(255,60,80,0.22);
   border-color: rgba(255,60,80,0.7);
@@ -263,10 +260,241 @@
   color: #fff;
 }
 
+/* ── TROFEO ── */
+.hud-btn-trophy {
+  background: rgba(255,215,0,0.06);
+  border-color: rgba(255,215,0,0.25);
+  color: #FFD700;
+  position: relative;
+  gap: 5px;
+  padding: 6px 10px;
+}
+.hud-btn-trophy:hover {
+  background: rgba(255,215,0,0.16);
+  border-color: rgba(255,215,0,0.55);
+  box-shadow: 0 0 12px rgba(255,215,0,0.2);
+}
+.hud-btn-trophy--active {
+  background: rgba(255,215,0,0.18);
+  border-color: rgba(255,215,0,0.6);
+  box-shadow: 0 0 14px rgba(255,215,0,0.25);
+}
+
+.hud-trophy-count {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+
+/* Badge de notificación — logro nuevo */
+.hud-badge-new {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4466;
+  border: 1px solid rgba(0,0,0,0.6);
+  animation: badge-pop 0.8s ease-in-out infinite;
+}
+
+@keyframes badge-pop {
+  0%, 100% { transform: scale(1);   opacity: 1;   }
+  50%       { transform: scale(1.4); opacity: 0.7; }
+}
+
+/* ── VOLUMEN ── */
+.hud-btn-volume {
+  background: rgba(250,204,21,0.08);
+  border-color: rgba(250,204,21,0.30);
+  color: #facc15;
+}
+.hud-btn-volume:hover {
+  background: rgba(250,204,21,0.20);
+  border-color: rgba(250,204,21,0.65);
+  box-shadow: 0 0 12px rgba(250,204,21,0.25);
+  color: #fff;
+}
+.hud-btn-volume--muted {
+  background: rgba(100,100,120,0.12);
+  border-color: rgba(150,150,170,0.25);
+  color: #6b7280;
+}
+.hud-btn-volume--muted:hover {
+  background: rgba(250,204,21,0.14);
+  border-color: rgba(250,204,21,0.45);
+  color: #facc15;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
-   MÓVIL (≤ 768px) — REDISEÑO COMPLETO
-   Barra superior delgada de extremo a extremo:
-   izquierda = jugador · derecha = zona + botones (solo íconos)
+   DRAWER DE LOGROS
+═══════════════════════════════════════════════════════════════════════════ */
+.hud-drawer {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 260px;
+  background: linear-gradient(160deg, rgba(0,8,20,0.96) 0%, rgba(0,18,35,0.94) 100%);
+  border: 1px solid rgba(255,215,0,0.22);
+  border-radius: 4px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 30;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  animation: drawer-in 0.18s ease;
+}
+
+@keyframes drawer-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.hud-drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid rgba(255,215,0,0.12);
+}
+
+.hud-drawer-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 2px;
+  flex: 1;
+}
+
+.hud-drawer-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 1px;
+}
+
+.hud-drawer-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,0.4);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  transition: color 0.15s;
+}
+.hud-drawer-close:hover { color: #fff; }
+
+/* Stats rápidas */
+.hud-drawer-stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.hud-drawer-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.hud-drawer-stat-val {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.hud-drawer-stat-lbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 7px;
+  letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.35);
+}
+
+/* Lista de logros */
+.hud-drawer-list {
+  padding: 6px 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hud-drawer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  transition: background 0.15s;
+  opacity: 0.45;
+}
+
+.hud-drawer-item--unlocked {
+  opacity: 1;
+  background: rgba(255,215,0,0.05);
+  border-color: rgba(255,215,0,0.18);
+}
+
+.hud-drawer-item-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  filter: grayscale(1);
+}
+
+.hud-drawer-item--unlocked .hud-drawer-item-icon {
+  filter: none;
+}
+
+.hud-drawer-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.hud-drawer-item-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hud-drawer-item--unlocked .hud-drawer-item-label {
+  color: #e0f4ff;
+}
+
+.hud-drawer-item-desc {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  color: rgba(255,255,255,0.25);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hud-drawer-item--unlocked .hud-drawer-item-desc {
+  color: rgba(255,215,0,0.5);
+}
+
+.hud-drawer-item-check {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #FFD700;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MÓVIL (≤ 768px)
 ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
 
@@ -287,11 +515,8 @@
   }
 
   .hud-panel::before,
-  .hud-panel::after {
-    display: none;
-  }
+  .hud-panel::after { display: none; }
 
-  /* ── Panel izquierdo: jugador ── */
   .hud-tl {
     left: 0;
     display: flex;
@@ -308,12 +533,10 @@
     width: 100%;
   }
 
-  .hud-avatar { width: 30px; height: 30px; }
-  .hud-initial { font-size: 13px; }
+  .hud-avatar    { width: 30px; height: 30px; }
+  .hud-initial   { font-size: 13px; }
   .hud-level-badge { width: 12px; height: 12px; font-size: 7px; }
-
   .hud-player-info { min-width: 0; flex: 1; }
-
   .hud-callsign {
     font-size: 11px;
     letter-spacing: 0.5px;
@@ -321,18 +544,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-
-  .hud-status {
-    font-size: 7px;
-    letter-spacing: 1px;
-    margin-top: 1px;
-  }
-  .hud-dot { width: 4px; height: 4px; }
-
-  /* Ocultar barras de bienestar/EXP en móvil */
+  .hud-status  { font-size: 7px; letter-spacing: 1px; margin-top: 1px; }
+  .hud-dot     { width: 4px; height: 4px; }
   .hud-bar-row { display: none; }
 
-  /* ── Panel derecho: zona + botones ── */
   .hud-tr {
     right: 0;
     text-align: left;
@@ -341,7 +556,7 @@
     justify-content: flex-end;
     gap: 6px;
     border-bottom: 1px solid rgba(0,200,255,0.15);
-    border-left: 1px solid rgba(0,200,255,0.10);
+    border-left:   1px solid rgba(0,200,255,0.10);
   }
 
   .hud-zone {
@@ -366,12 +581,9 @@
 
   .hud-score-row { display: none; }
 
-  .hud-actions {
-    gap: 4px;
-    flex-shrink: 0;
-  }
+  .hud-actions   { gap: 4px; flex-shrink: 0; }
 
-  /* Botones reducidos a íconos circulares */
+  /* Botones circulares en móvil */
   .hud-btn {
     padding: 0;
     font-size: 0;
@@ -384,35 +596,44 @@
     clip-path: none;
   }
   .hud-btn svg { flex-shrink: 0; }
+
+  /* Ocultar texto del contador de trofeos en móvil */
+  .hud-trophy-count { display: none; }
+
+  /* Drawer pegado a la derecha por debajo del panel */
+  .hud-drawer {
+    position: fixed;
+    top: 48px;
+    right: 0;
+    width: 240px;
+    clip-path: none;
+    border-radius: 0 0 0 6px;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MÓVIL MUY PEQUEÑO (≤ 480px)
 ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 480px) {
-  .hud-avatar { width: 26px; height: 26px; }
-  .hud-initial { font-size: 11px; }
-  .hud-callsign { font-size: 10px; }
+  .hud-avatar    { width: 26px; height: 26px; }
+  .hud-initial   { font-size: 11px; }
+  .hud-callsign  { font-size: 10px; }
   .hud-zone-name { font-size: 10px; }
-  .hud-btn { width: 26px; height: 26px; }
+  .hud-btn       { width: 26px; height: 26px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   MÓVIL LANDSCAPE — barra aún más delgada
+   MÓVIL LANDSCAPE
 ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) and (orientation: landscape) {
-  .hud-panel { padding: 5px 8px; }
-
-  .hud-avatar { width: 24px; height: 24px; }
-  .hud-initial { font-size: 10px; }
+  .hud-panel     { padding: 5px 8px; }
+  .hud-avatar    { width: 24px; height: 24px; }
+  .hud-initial   { font-size: 10px; }
   .hud-level-badge { width: 10px; height: 10px; font-size: 6px; }
-
-  .hud-callsign { font-size: 9px; }
-  .hud-status { display: none; }
-
+  .hud-callsign  { font-size: 9px; }
+  .hud-status    { display: none; }
   .hud-zone-name { font-size: 9px; }
-
-  .hud-btn { width: 22px; height: 22px; }
-  .hud-btn svg { width: 12px; height: 12px; }
+  .hud-btn       { width: 22px; height: 22px; }
+  .hud-btn svg   { width: 12px; height: 12px; }
+  .hud-drawer    { top: 38px; }
 }
-

@@ -400,7 +400,7 @@ function MisionScene({
 
       <PlayerController
         controls={mobileControls}
-        startPosition={[-11, -3, 3]}
+        startPosition={[-12, -3, 6]}
         floorY={-2.6}
         playerRef={playerRef}
         limites={{ xMin: -15, xMax: 10, zMin:10, zMax: 18}} 

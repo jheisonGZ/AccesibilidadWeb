@@ -1,29 +1,33 @@
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import * as THREE from "three";
-import { extend, useFrame } from "@react-three/fiber";
+import { extend, useFrame, useThree } from "@react-three/fiber";
 import { shaderMaterial } from "@react-three/drei";
 
 // ─────────────────────────────────────────────────────────
-// SHADER DE AGUA — Playa de la Serenidad
-// Colores: #0ea5e9 (profundidad) → #bae6fd (superficie)
+// SHADER DE AGUA REALISTA - Océano Nocturno
+// Efectos: Olas grandes + pequeñas + espuma + reflejos
 // ─────────────────────────────────────────────────────────
 const WaterShaderMaterial = shaderMaterial(
   {
     uTime:                0,
-    uBigWavesElevation:   0.08,
-    uBigWavesFrequency:   new THREE.Vector2(2.5, 1.8),
-    uBigWavesSpeed:       0.6,
-    uDepthColor:          new THREE.Color("#0369a1"),
-    uSurfaceColor:        new THREE.Color("#7dd3fc"),
-    uColorOffset:         0.12,
-    uColorMultiplier:     4.5,
-    uSmallWavesElevation: 0.10,
-    uSmallWavesFrequency: 1.8,
-    uSmallWavesSpeed:     0.2,
-    uSmallIterations:     3,
+    uBigWavesElevation:   0.12,
+    uBigWavesFrequency:   new THREE.Vector2(2.0, 1.6),
+    uBigWavesSpeed:       0.5,
+uDepthColor:          new THREE.Color("#1a4a6a"),   // Azul medio
+uSurfaceColor:        new THREE.Color("#5aaccc"),   // Celeste
+    uFoamColor:           new THREE.Color("#4488bb"),   // 🌊 Azul espuma
+    uColorOffset:         0.08,
+    uColorMultiplier:     3.5,
+    uSmallWavesElevation: 0.15,
+    uSmallWavesFrequency: 2.0,
+    uSmallWavesSpeed:     0.25,
+    uSmallIterations:     4,
+    uGlossiness:          0.6,
+    uSpecularColor:       new THREE.Color("#334466"),   // ✨ Brillo especular
+    uLightDirection:      new THREE.Vector3(0.5, 1.0, 0.3),
   },
 
-  // ── Vertex Shader ──────────────────────────────────────
+  // ── Vertex Shader Mejorado ─────────────────────────────
   `
     uniform float uTime;
     uniform float uBigWavesElevation;
@@ -36,7 +40,11 @@ const WaterShaderMaterial = shaderMaterial(
     uniform float uSmallIterations;
 
     varying float vElevation;
+    varying vec3  vPosition;
+    varying vec3  vNormal;
+    varying vec3  vWorldPosition;
 
+    // Noise functions
     vec4 permute(vec4 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
     vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
     vec3 fade(vec3 t) { return t*t*t*(t*(t*6.0-15.0)+10.0); }
@@ -86,42 +94,81 @@ const WaterShaderMaterial = shaderMaterial(
 
     void main() {
       vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+      vec3 worldPos = modelPosition.xyz;
 
-      float elevation =
-        sin(modelPosition.x * uBigWavesFrequency.x + uTime * uBigWavesSpeed) *
-        sin(modelPosition.z * uBigWavesFrequency.y + uTime * uBigWavesSpeed) *
+      // Olas grandes (tipo mar abierto)
+      float bigWaves =
+        sin(worldPos.x * uBigWavesFrequency.x + uTime * uBigWavesSpeed) *
+        cos(worldPos.z * uBigWavesFrequency.y + uTime * uBigWavesSpeed * 0.8) *
         uBigWavesElevation;
 
+      // Olas pequeñas detalladas
+      float smallWaves = 0.0;
       for(float i = 1.0; i <= uSmallIterations; i++) {
-        elevation -= abs(
-          cnoise(vec3(modelPosition.xz * uSmallWavesFrequency * i, uTime * uSmallWavesSpeed))
+        smallWaves -= abs(
+          cnoise(vec3(worldPos.xz * uSmallWavesFrequency * i, uTime * uSmallWavesSpeed))
           * uSmallWavesElevation / i
         );
       }
 
-      modelPosition.y += elevation;
+      // Combinación de olas
+      float elevation = bigWaves + smallWaves;
+      
+      // Espuma en crestas
+      float foam = smoothstep(0.08, 0.12, abs(elevation)) * 0.3;
+      elevation += foam * 0.02;
 
-      vec4 viewPosition      = viewMatrix * modelPosition;
+      modelPosition.y += elevation;
+      vec4 viewPosition = viewMatrix * modelPosition;
       vec4 projectedPosition = projectionMatrix * viewPosition;
       gl_Position = projectedPosition;
 
       vElevation = elevation;
+      vPosition = modelPosition.xyz;
+      vWorldPosition = worldPos;
     }
   `,
 
-  // ── Fragment Shader ────────────────────────────────────
+  // ── Fragment Shader Mejorado ──────────────────────────
   `
     uniform vec3  uDepthColor;
     uniform vec3  uSurfaceColor;
+    uniform vec3  uFoamColor;
     uniform float uColorOffset;
     uniform float uColorMultiplier;
+    uniform float uGlossiness;
+    uniform vec3  uSpecularColor;
+    uniform vec3  uLightDirection;
 
     varying float vElevation;
+    varying vec3  vPosition;
+    varying vec3  vWorldPosition;
 
     void main() {
+      // Color base según profundidad
       float mixStrength = (vElevation + uColorOffset) * uColorMultiplier;
-      vec3  color       = mix(uDepthColor, uSurfaceColor, mixStrength);
-      gl_FragColor      = vec4(color, 1.0);
+      mixStrength = clamp(mixStrength, 0.0, 1.0);
+      
+      // Gradiente de color (profundo → superficie)
+      vec3 baseColor = mix(uDepthColor, uSurfaceColor, mixStrength);
+      
+      // Espuma en las crestas
+      float foam = smoothstep(0.06, 0.12, abs(vElevation));
+      vec3 foamColor = mix(baseColor, uFoamColor, foam * 0.6);
+      
+      // Brillo especular (reflejo de luna)
+      float specular = pow(
+        max(0.0, dot(normalize(vec3(0.5, 1.0, 0.3)), normalize(vWorldPosition))),
+        32.0
+      ) * uGlossiness;
+      
+      vec3 finalColor = mix(foamColor, uSpecularColor, specular * 0.4);
+      
+      // Vignette en los bordes (más oscuro en el horizonte)
+      float vignette = 1.0 - abs(vElevation) * 0.5;
+      finalColor *= vignette;
+      
+      gl_FragColor = vec4(finalColor, 0.92);
     }
   `
 );
@@ -130,14 +177,14 @@ extend({ WaterShaderMaterial });
 
 // ─────────────────────────────────────────────────────────
 // COMPONENTE WATER
-// position Y: ligeramente por debajo del floorY de SalaPlaya (-4.5)
-// Ajusta el Y si el agua queda muy alta o muy baja
 // ─────────────────────────────────────────────────────────
 export default function Water({ positionY = -5.5, scale = 40 }) {
   const materialRef = useRef();
 
   useFrame((_, delta) => {
-    if (materialRef.current) materialRef.current.uTime += delta;
+    if (materialRef.current) {
+      materialRef.current.uTime += delta;
+    }
   });
 
   return (
@@ -147,7 +194,11 @@ export default function Water({ positionY = -5.5, scale = 40 }) {
       rotation-x={-Math.PI / 2}
     >
       <planeGeometry args={[5, 5, 256, 256]} />
-      <waterShaderMaterial ref={materialRef} />
+      <waterShaderMaterial
+        ref={materialRef}
+        transparent
+        depthWrite={true}
+      />
     </mesh>
   );
 }

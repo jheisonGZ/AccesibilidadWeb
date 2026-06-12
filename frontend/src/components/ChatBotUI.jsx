@@ -492,13 +492,24 @@ function ChatPanel({ emotion, userContext, onClose, panelRef, onTyping, routeKey
 
   // FIX: .chatbot-bubble nace con opacity:0 en el CSS. Sin animarla a 1,
   // los mensajes (incluido el de bienvenida) quedan invisibles/transparentes.
-  useEffect(() => {
-    const bubbles = document.querySelectorAll(".chatbot-bubble");
-    if (bubbles.length) {
-      gsap.to(bubbles[bubbles.length - 1], { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" });
-    }
+ useEffect(() => {
+  const bubbles = document.querySelectorAll(".chatbot-bubble");
+  if (bubbles.length) {
+    gsap.to(bubbles[bubbles.length - 1], { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" });
+  }
+
+  const lastMsg = messages[messages.length - 1];
+
+  if (lastMsg?.role === "assistant") {
+    // Respuesta del bot: scroll al INICIO del mensaje para poder leerlo desde arriba
+    const allRows = document.querySelectorAll(".chatbot-msg-row");
+    const lastRow = allRows[allRows.length - 1];
+    lastRow?.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else {
+    // Mensaje del usuario: scroll al final como antes
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }
+}, [messages]);
 
   const handleInputChange = (e) => {
     setInput(e.target.value);

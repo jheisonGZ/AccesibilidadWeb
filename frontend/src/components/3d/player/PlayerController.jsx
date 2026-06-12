@@ -93,52 +93,29 @@ function AvatarScene({ paths, controls, startPosition, floorY, playerRef, limite
   const actingFinishedCb = useRef(null);
 
   // 🎯 NUEVO: Mapeo de flechas a WASD + prevenir scroll
-  useEffect(() => {
-    const down = (e) => {
-      // Prevenir scroll con flechas y espacio
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
-        e.preventDefault();
-      }
-      
-      // Mapeo de teclas
-      if (e.code === "Space") {
-        keys.current["space"] = true;
-      } else if (e.code === "ArrowUp") {
-        keys.current["w"] = true;
-      } else if (e.code === "ArrowDown") {
-        keys.current["s"] = true;
-      } else if (e.code === "ArrowLeft") {
-        keys.current["a"] = true;
-      } else if (e.code === "ArrowRight") {
-        keys.current["d"] = true;
-      } else {
-        keys.current[e.key.toLowerCase()] = true;
-      }
-    };
-    
-    const up = (e) => {
-      if (e.code === "Space") {
-        keys.current["space"] = false;
-      } else if (e.code === "ArrowUp") {
-        keys.current["w"] = false;
-      } else if (e.code === "ArrowDown") {
-        keys.current["s"] = false;
-      } else if (e.code === "ArrowLeft") {
-        keys.current["a"] = false;
-      } else if (e.code === "ArrowRight") {
-        keys.current["d"] = false;
-      } else {
-        keys.current[e.key.toLowerCase()] = false;
-      }
-    };
-    
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
-    return () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
-    };
-  }, []);
+ useEffect(() => {
+  const isTyping = () => {
+    const tag = document.activeElement?.tagName;
+    return tag === "INPUT" || tag === "TEXTAREA";
+  };
+
+  const down = (e) => {
+    if (isTyping()) return;
+    const key = e.code === "Space" ? "space" : e.key.toLowerCase();
+    keys.current[key] = true;
+  };
+  const up = (e) => {
+    if (isTyping()) return;
+    const key = e.code === "Space" ? "space" : e.key.toLowerCase();
+    keys.current[key] = false;
+  };
+  window.addEventListener("keydown", down);
+  window.addEventListener("keyup",   up);
+  return () => {
+    window.removeEventListener("keydown", down);
+    window.removeEventListener("keyup",   up);
+  };
+}, []);
 
   useEffect(() => {
     const idleAction = Object.values(idle.actions || {})[0];
