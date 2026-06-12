@@ -19,8 +19,8 @@ import { useLandscapeLock } from "../components/3d/mobile/useLandscapeLock";
 const TOTEM_DATA = [
   {
     id: 0,
-    position: [8, -6, 18],
-    scale: 1,
+    position: [8, -12.5, 18],
+    scale: 1.5,
     titulo: "Respiración Consciente",
     mensaje:
       "Respira lentamente y presta atención a cada inhalación y exhalación. Esta técnica te ayudará a encontrar la calma en momentos de agitación.",
@@ -28,8 +28,8 @@ const TOTEM_DATA = [
   },
   {
     id: 1,
-    position: [8, -6, 22],
-    scale: 1,
+    position: [-14, -12, -12],
+    scale: 1.5,
     titulo: "Pensamiento Positivo",
     mensaje:
       "Identifica una preocupación y reemplázala por una acción concreta que puedas realizar. Transforma la inquietud en movimiento positivo.",
@@ -37,8 +37,8 @@ const TOTEM_DATA = [
   },
   {
     id: 2,
-    position: [8, -6, 26],
-    scale: 1,
+    position: [19, -12, -5],
+    scale: 1.5,
     titulo: "Reconocimiento Emocional",
     mensaje:
       "Reconoce cómo te sientes sin juzgar tus emociones. Date permiso para sentir y observa tus emociones con compasión.",
@@ -50,8 +50,8 @@ const TOTEM_DATA = [
 // CONFIGURACIÓN DEL COFRE
 // ─────────────────────────────────────────────────────────
 const COFRE_CONFIG = {
-  position: [14, -6.3, 3],
-  scale: 0.10,
+  position: [0, -12.7, -5],
+  scale: 0.13,
 };
 
 const PROXIMITY_RADIUS = 1.5;
@@ -149,10 +149,14 @@ function Bosque() {
 
   return (
     <primitive
+    // position={[X, Y, Z]}
+// X: (-) izquierda  | (+) derecha
+// Y: (-) abajo      | (+) arriba
+// Z: (-) atrás      | (+) adelante
       object={scene}
-      position={[-7, 5, -50]}
-      rotation={[-0, -2.45, 0.07]}
-      scale={2}
+      position={[-1, -1, -5]}  // // position={[izquierda/derecha, abajo/arriba, atrás/adelante]}
+      rotation={[0.1, -2.49, 0.04]}
+      scale={0.8}
       receiveShadow
       castShadow
     />
@@ -434,13 +438,19 @@ function MisionScene({
         onCloseComplete={onCofreCloseComplete}
       />
 
-      <PlayerController
-        controls={mobileControls}
-        startPosition={[6, 0, 19]}
-        floorY={-16.6}
-        playerRef={playerRef}
-        limites={{ xMin: -15, xMax: 18, zMin: -100, zMax: 25 }}
-      />
+<PlayerController
+  controls={mobileControls}
+  startPosition={[6, -13.0, 19]}
+  floorY={-13.0}
+  playerRef={playerRef}
+  limites={{ 
+    xMin: -15,    // ← Solo 11 unidades a la izquierda del inicio
+    xMax: 22,    // ← 9 unidades a la derecha del inicio
+    zMin: -12,     // ← 14 unidades atrás del inicio
+    zMax: 24.2     // ← 6 unidades adelante del inicio 
+  }}
+  avatarScale={1.5}
+/>
     </>
   );
 }
@@ -782,29 +792,52 @@ export default function SalaBosque({ onSalir }) {
     setIsNearCofre(isNear);
   }, []);
 
+  // 🎯 NUEVO: handleInteract con animaciones (como en la playa)
   const handleInteract = useCallback(() => {
     if (modalOpen) return;
 
+    // ── Recoger tótem ──
     if (nearbyTotemId !== null && !collectedIds.includes(nearbyTotemId)) {
       const data = TOTEM_DATA.find((t) => t.id === nearbyTotemId);
-      if (data) {
-        setModalTotem(data);
+      if (!data) return;
+
+      // 🎯 Callback que se ejecuta a MITAD de la animación
+      const enLaMitad = () => {
         setCollectedIds((prev) => [...prev, nearbyTotemId]);
         playSound("totem");
+      };
+
+      // 🎯 Callback cuando TERMINA toda la animación
+      const alTerminar = () => {
+        setModalTotem(data);
+      };
+
+      if (playerRef.current?.playAnimation) {
+        playerRef.current.playAnimation("tomar", alTerminar, enLaMitad);
+      } else {
+        enLaMitad();
+        alTerminar();
       }
       return;
     }
 
+    // ── Cofre ──
     if (isNearCofre) {
       if (!allCollected) {
         setModalCofreBloq(true);
         playSound("bloqueado");
       } else if (!cofreAbierto) {
+        // 🎯 PRIMERO: Abrimos el cofre INMEDIATAMENTE
         setCofreAbierto(true);
         playSound("cofre");
+        
+        // 🎯 SEGUNDO: El personaje hace su animación AL MISMO TIEMPO
+        if (playerRef.current?.playAnimation) {
+          playerRef.current.playAnimation("abrir");
+        }
       }
     }
-  }, [modalOpen, nearbyTotemId, collectedIds, isNearCofre, allCollected, cofreAbierto]);
+  }, [modalOpen, nearbyTotemId, collectedIds, isNearCofre, allCollected, cofreAbierto, playerRef]);
 
   useKeyE(handleInteract);
 

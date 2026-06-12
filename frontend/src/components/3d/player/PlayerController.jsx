@@ -133,62 +133,85 @@ function AvatarScene({ paths, controls, startPosition, floorY, playerRef, limite
   // ───────────────────────────────────────────────────────
   // NUEVO: reproducir animación contextual (tomar / abrir)
   // ───────────────────────────────────────────────────────
-  const playAnimation = useCallback((name, onComplete) => {
-    if (isActing.current) {
-      onComplete?.();
-      return;
-    }
+const playAnimation = useCallback((name, onComplete, onMidpoint) => {
+  if (isActing.current) {
+    onComplete?.();
+    return;
+  }
 
-    const idleAction  = Object.values(idle.actions  || {})[0];
-    const walkAction  = Object.values(walk.actions  || {})[0];
-    const runAction   = Object.values(run.actions   || {})[0];
-    const jumpAction  = Object.values(jump.actions  || {})[0];
-    const tomarAction = Object.values(tomar.actions || {})[0];
-    const abrirAction = Object.values(abrir.actions || {})[0];
+  const idleAction  = Object.values(idle.actions  || {})[0];
+  const walkAction  = Object.values(walk.actions  || {})[0];
+  const runAction   = Object.values(run.actions   || {})[0];
+  const jumpAction  = Object.values(jump.actions  || {})[0];
+  const tomarAction = Object.values(tomar.actions || {})[0];
+  const abrirAction = Object.values(abrir.actions || {})[0];
 
-    const targetAction = name === "tomar" ? tomarAction
-                        : name === "abrir" ? abrirAction
-                        : null;
+  const targetAction = name === "tomar" ? tomarAction
+                      : name === "abrir" ? abrirAction
+                      : null;
 
-    if (!targetAction || !targetAction._mixer) {
-      onComplete?.();
-      return;
-    }
+  if (!targetAction || !targetAction._mixer) {
+    onComplete?.();
+    return;
+  }
 
-    isActing.current = true;
-    currentAnimation.current = "action";
+  isActing.current = true;
+  currentAnimation.current = "action";
 
-    idleAction?.fadeOut(0.1);
-    walkAction?.fadeOut(0.1);
-    runAction?.fadeOut(0.1);
-    jumpAction?.fadeOut(0.1);
+  idleAction?.fadeOut(0.1);
+  walkAction?.fadeOut(0.1);
+  runAction?.fadeOut(0.1);
+  jumpAction?.fadeOut(0.1);
 
-    targetAction.reset();
-    targetAction.setLoop(THREE.LoopOnce, 1);
-    targetAction.clampWhenFinished = true;
-    targetAction.fadeIn(0.15).play();
-
-    const mixer = targetAction._mixer;
-
-    if (actingFinishedCb.current) {
-      mixer.removeEventListener("finished", actingFinishedCb.current);
-    }
-
-    actingFinishedCb.current = (e) => {
-      if (e.action !== targetAction) return;
-      isActing.current = false;
-      currentAnimation.current = "idle";
-      movingRef.current    = false;
-      isRunningRef.current = false;
-      targetAction.fadeOut(0.2);
-      idleAction?.reset().fadeIn(0.2).play();
-      mixer.removeEventListener("finished", actingFinishedCb.current);
-      actingFinishedCb.current = null;
-      onComplete?.();
+  targetAction.reset();
+  targetAction.setLoop(THREE.LoopOnce, 1);
+  targetAction.clampWhenFinished = true;
+  
+  // 🎯 Ajustar velocidad para sincronizar con el cofre
+  if (name === "abrir") {
+    targetAction.setEffectiveTimeScale(1.0);
+  }
+  
+  targetAction.fadeIn(0.15).play();
+  
+  const mixer = targetAction._mixer;
+  
+  // 🎯 NUEVO: Detectar la mitad de la animación
+  if (onMidpoint) {
+    const duration = targetAction.getClip().duration;
+    let midpointFired = false;
+    
+    const checkMidpoint = () => {
+      if (!midpointFired && targetAction.time >= duration * 0.2) {
+        midpointFired = true;
+        onMidpoint();
+      }
+      if (!midpointFired && targetAction.isRunning()) {
+        requestAnimationFrame(checkMidpoint);
+      }
     };
+    requestAnimationFrame(checkMidpoint);
+  }
 
-    mixer.addEventListener("finished", actingFinishedCb.current);
-  }, [idle, walk, run, jump, tomar, abrir]);
+  if (actingFinishedCb.current) {
+    mixer.removeEventListener("finished", actingFinishedCb.current);
+  }
+
+  actingFinishedCb.current = (e) => {
+    if (e.action !== targetAction) return;
+    isActing.current = false;
+    currentAnimation.current = "idle";
+    movingRef.current    = false;
+    isRunningRef.current = false;
+    targetAction.fadeOut(0.2);
+    idleAction?.reset().fadeIn(0.2).play();
+    mixer.removeEventListener("finished", actingFinishedCb.current);
+    actingFinishedCb.current = null;
+    onComplete?.();
+  };
+
+  mixer.addEventListener("finished", actingFinishedCb.current);
+}, [idle, walk, run, jump, tomar, abrir]);
 
   // Exponer playAnimation en el ref del jugador
   useEffect(() => {
@@ -197,7 +220,10 @@ function AvatarScene({ paths, controls, startPosition, floorY, playerRef, limite
     }
   }, [playAnimation]);
 
+
+
   useFrame(() => {
+
     if (!group.current) return;
 
     // Si está ejecutando "tomar" o "abrir", congelar movimiento
@@ -296,24 +322,29 @@ function AvatarScene({ paths, controls, startPosition, floorY, playerRef, limite
 
       if (moving && isRunning && currentAnimation.current !== "run") {
         currentAnimation.current = "run";
-        idleAction?.fadeOut(0.2);
-        walkAction?.fadeOut(0.2);
+        idleAction?.fadeOut(0.10);
+        walkAction?.fadeOut(0.10);
         if (!runAction?.isRunning()) runAction?.reset().fadeIn(0.2).play();
         else runAction?.fadeIn(0.2);
 
       } else if (moving && !isRunning && currentAnimation.current !== "walk") {
         currentAnimation.current = "walk";
-        idleAction?.fadeOut(0.2);
-        runAction?.fadeOut(0.25);
+        idleAction?.fadeOut(0.10);
+        runAction?.fadeOut(0.10);
         if (!walkAction?.isRunning()) walkAction?.reset().fadeIn(0.2).play();
         else walkAction?.fadeIn(0.2);
 
-      } else if (!moving && currentAnimation.current !== "idle") {
+            } else if (!moving && currentAnimation.current !== "idle") {
         currentAnimation.current = "idle";
-        walkAction?.fadeOut(0.3);
-        runAction?.fadeOut(0.3);
-        jumpAction?.fadeOut(0.2);
-        idleAction?.reset().fadeIn(0.25).play();
+        walkAction?.fadeOut(0.15);  // ← Antes 0.6 (muy lento)
+        runAction?.fadeOut(0.15);   // ← Antes 0.6
+        jumpAction?.fadeOut(0.15);  // ← Antes 0.6
+        
+        if (idleAction) {
+          idleAction.reset();
+          idleAction.play();
+          idleAction.fadeIn(0.15);  // ← Antes 0.8
+        }
       }
     }
 
@@ -355,3 +386,4 @@ return (
     />
   );
 }
+

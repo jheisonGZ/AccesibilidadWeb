@@ -20,7 +20,7 @@ import { useLandscapeLock } from "../components/3d/mobile/useLandscapeLock";
 const JARRON_DATA = [
   {
     id: 0,
-    position: [10, -6, 20],
+    position: [19, -6, 9],
     scale: 1,
     titulo: "Respiración Consciente",
     mensaje:
@@ -29,7 +29,7 @@ const JARRON_DATA = [
   },
   {
     id: 1,
-    position: [10, -6, 23],
+    position: [11, -6, 18],
     scale: 1,
     titulo: "Organización de Tareas",
     mensaje:
@@ -38,7 +38,7 @@ const JARRON_DATA = [
   },
   {
     id: 2,
-    position: [10, -6, 26],
+    position: [-5, -5, 9],
     scale: 1,
     titulo: "Pausa Activa",
     mensaje:
@@ -437,10 +437,15 @@ function MisionScene({
 
       <PlayerController
         controls={mobileControls}
-        startPosition={[6, 0, 19]}
-        floorY={-6.3}
+        startPosition={[6, -6.3, 19]}  // ✅ Corregido: mismo Y que floorY
+        floorY={-6.7}
         playerRef={playerRef}
-        limites={{ xMin: -15, xMax: 18, zMin: -100, zMax: 25 }}
+        limites={{ 
+        xMin: -15,    // ← Solo 11 unidades a la izquierda del inicio
+        xMax: 18,    // ← 9 unidades a la derecha del inicio
+        zMin: -1,     // ← 14 unidades atrás del inicio
+        zMax: 21     // ← 6 unidades adelante del inicio 
+      }}
       />
     </>
   );
@@ -783,19 +788,34 @@ export default function SalaValle({ onSalir }) {
     setIsNearCofre(isNear);
   }, []);
 
+  // 🎯 NUEVO: handleInteract con animaciones
   const handleInteract = useCallback(() => {
     if (modalOpen) return;
 
+    // ── Recoger jarrón ──
     if (nearbyJarronId !== null && !collectedIds.includes(nearbyJarronId)) {
       const data = JARRON_DATA.find((j) => j.id === nearbyJarronId);
-      if (data) {
-        setModalJarron(data);
+      if (!data) return;
+
+      const enLaMitad = () => {
         setCollectedIds((prev) => [...prev, nearbyJarronId]);
         playSound("jarron");
+      };
+
+      const alTerminar = () => {
+        setModalJarron(data);
+      };
+
+      if (playerRef.current?.playAnimation) {
+        playerRef.current.playAnimation("tomar", alTerminar, enLaMitad);
+      } else {
+        enLaMitad();
+        alTerminar();
       }
       return;
     }
 
+    // ── Cofre ──
     if (isNearCofre) {
       if (!allCollected) {
         setModalCofreBloq(true);
@@ -803,9 +823,13 @@ export default function SalaValle({ onSalir }) {
       } else if (!cofreAbierto) {
         setCofreAbierto(true);
         playSound("cofre");
+        
+        if (playerRef.current?.playAnimation) {
+          playerRef.current.playAnimation("abrir");
+        }
       }
     }
-  }, [modalOpen, nearbyJarronId, collectedIds, isNearCofre, allCollected, cofreAbierto]);
+  }, [modalOpen, nearbyJarronId, collectedIds, isNearCofre, allCollected, cofreAbierto, playerRef]);
 
   useKeyE(handleInteract);
 

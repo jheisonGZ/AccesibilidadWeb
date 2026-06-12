@@ -245,7 +245,7 @@ function Cofre({ playerRef, allCollected, onNearby, shouldOpen, config, onOpenCo
       const openAction = actions["Scene"];
       if (openAction) {
         setIsOpening(true);
-        openAction.setEffectiveTimeScale(1.5);
+        openAction.setEffectiveTimeScale(0.8);
         openAction.setLoop(THREE.LoopOnce, 1);
         openAction.clampWhenFinished = true;
         openAction.reset().play();
@@ -720,21 +720,29 @@ export default function SalaPlaya({ onSalir }) {
 const handleInteract = useCallback(() => {
   if (modalOpen) return;
 
+
+
   // ── Recoger botella ──
   if (nearbyBotellaId !== null && !collectedIds.includes(nearbyBotellaId)) {
     const data = BOTELLA_DATA.find((b) => b.id === nearbyBotellaId);
     if (!data) return;
 
-    const ejecutar = () => {
-      setModalBotella(data);
+    // 🎯 Callback que se ejecuta a MITAD de la animación
+    const enLaMitad = () => {
       setCollectedIds((prev) => [...prev, nearbyBotellaId]);
       playSound("botella");
     };
 
+    // 🎯 Callback cuando TERMINA toda la animación
+    const alTerminar = () => {
+      setModalBotella(data);
+    };
+
     if (playerRef.current?.playAnimation) {
-      playerRef.current.playAnimation("tomar", ejecutar);
+      playerRef.current.playAnimation("tomar", alTerminar, enLaMitad);
     } else {
-      ejecutar();
+      enLaMitad();
+      alTerminar();
     }
     return;
   }
@@ -745,15 +753,13 @@ const handleInteract = useCallback(() => {
       setModalCofreBloq(true);
       playSound("bloqueado");
     } else if (!cofreAbierto) {
-      const ejecutar = () => {
-        setCofreAbierto(true);
-        playSound("cofre");
-      };
-
+      // 🎯 PRIMERO: Abrimos el cofre INMEDIATAMENTE
+      setCofreAbierto(true);
+      playSound("cofre");
+      
+      // 🎯 SEGUNDO: El personaje hace su animación AL MISMO TIEMPO
       if (playerRef.current?.playAnimation) {
-        playerRef.current.playAnimation("abrir", ejecutar);
-      } else {
-        ejecutar();
+        playerRef.current.playAnimation("abrir");
       }
     }
   }
