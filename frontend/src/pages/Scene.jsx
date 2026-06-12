@@ -8,7 +8,7 @@ import { doc, collection, query, orderBy, limit, onSnapshot } from "firebase/fir
 import { auth, db } from "../services/firebase";
 
 // Lazy fuera del componente — correcto, no se recrean en cada render
-const SalaIsla   = lazy(() => import("../scenes/SalaIsla"));
+const SalaIsla   = lazy(() => import("../scenes/Salaisla"));
 const SalaPlaya  = lazy(() => import("../scenes/SalaPlaya"));
 const SalaBosque = lazy(() => import("../scenes/SalaBosque"));
 const SalaValle  = lazy(() => import("../scenes/SalaValle"));

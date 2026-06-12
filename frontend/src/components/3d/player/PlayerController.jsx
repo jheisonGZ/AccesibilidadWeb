@@ -92,20 +92,51 @@ function AvatarScene({ paths, controls, startPosition, floorY, playerRef, limite
   const isActing       = useRef(false);
   const actingFinishedCb = useRef(null);
 
+  // 🎯 NUEVO: Mapeo de flechas a WASD + prevenir scroll
   useEffect(() => {
     const down = (e) => {
-      const key = e.code === "Space" ? "space" : e.key.toLowerCase();
-      keys.current[key] = true;
+      // Prevenir scroll con flechas y espacio
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+        e.preventDefault();
+      }
+      
+      // Mapeo de teclas
+      if (e.code === "Space") {
+        keys.current["space"] = true;
+      } else if (e.code === "ArrowUp") {
+        keys.current["w"] = true;
+      } else if (e.code === "ArrowDown") {
+        keys.current["s"] = true;
+      } else if (e.code === "ArrowLeft") {
+        keys.current["a"] = true;
+      } else if (e.code === "ArrowRight") {
+        keys.current["d"] = true;
+      } else {
+        keys.current[e.key.toLowerCase()] = true;
+      }
     };
+    
     const up = (e) => {
-      const key = e.code === "Space" ? "space" : e.key.toLowerCase();
-      keys.current[key] = false;
+      if (e.code === "Space") {
+        keys.current["space"] = false;
+      } else if (e.code === "ArrowUp") {
+        keys.current["w"] = false;
+      } else if (e.code === "ArrowDown") {
+        keys.current["s"] = false;
+      } else if (e.code === "ArrowLeft") {
+        keys.current["a"] = false;
+      } else if (e.code === "ArrowRight") {
+        keys.current["d"] = false;
+      } else {
+        keys.current[e.key.toLowerCase()] = false;
+      }
     };
+    
     window.addEventListener("keydown", down);
-    window.addEventListener("keyup",   up);
+    window.addEventListener("keyup", up);
     return () => {
       window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup",   up);
+      window.removeEventListener("keyup", up);
     };
   }, []);
 
@@ -247,36 +278,54 @@ const playAnimation = useCallback((name, onComplete, onMidpoint) => {
     const runAction  = Object.values(run.actions  || {})[0];
     const jumpAction = Object.values(jump.actions || {})[0];
 
-    if (keys.current["w"]) {
-      group.current.position.z -= vel;
-      group.current.rotation.y = Math.PI;
-      moving = true;
-    }
-    if (keys.current["s"]) {
-      group.current.position.z += vel;
-      group.current.rotation.y = 0;
-      moving = true;
-    }
-    if (keys.current["a"]) {
-      group.current.position.x -= vel;
-      group.current.rotation.y = -Math.PI / 2;
-      moving = true;
-    }
-    if (keys.current["d"]) {
-      group.current.position.x += vel;
-      group.current.rotation.y = Math.PI / 2;
+    // 🎯 Movimiento con dirección combinada (diagonales fluidas)
+    let moveX = 0;
+    let moveZ = 0;
+
+    if (keys.current["w"]) moveZ -= 1;
+    if (keys.current["s"]) moveZ += 1;
+    if (keys.current["a"]) moveX -= 1;
+    if (keys.current["d"]) moveX += 1;
+
+    // Movimiento WASD + Flechas (normalizado para no ser más rápido en diagonal)
+    if (moveX !== 0 || moveZ !== 0) {
+      const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
+      moveX = (moveX / length) * vel;
+      moveZ = (moveZ / length) * vel;
+      
+      group.current.position.x += moveX;
+      group.current.position.z += moveZ;
+      
+      // 🎯 Rotación suave hacia la dirección del movimiento
+      const targetAngle = Math.atan2(moveX, moveZ);
+      const currentAngle = group.current.rotation.y;
+      let angleDiff = targetAngle - currentAngle;
+      
+      // Ajuste para rotación más corta
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      
+      group.current.rotation.y += angleDiff * 0.15; // Suavidad de rotación
+      
       moving = true;
     }
 
+    // Controles móviles (joystick)
     if (move && (Math.abs(move.x) > 0.1 || Math.abs(move.y) > 0.1)) {
       group.current.position.x += move.x * vel;
       group.current.position.z -= move.y * vel;
+      
+      // 🎯 Rotación suave para joystick
+      const targetAngle = Math.atan2(move.x, -move.y);
+      const currentAngle = group.current.rotation.y;
+      let angleDiff = targetAngle - currentAngle;
+      
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      
+      group.current.rotation.y += angleDiff * 0.15;
+      
       moving = true;
-      if (Math.abs(move.x) > Math.abs(move.y)) {
-        group.current.rotation.y = move.x > 0 ? Math.PI / 2 : -Math.PI / 2;
-      } else {
-        group.current.rotation.y = move.y > 0 ? Math.PI : 0;
-      }
     }
 
     const xMin = limites?.xMin ?? -100;
@@ -336,14 +385,14 @@ const playAnimation = useCallback((name, onComplete, onMidpoint) => {
 
             } else if (!moving && currentAnimation.current !== "idle") {
         currentAnimation.current = "idle";
-        walkAction?.fadeOut(0.15);  // ← Antes 0.6 (muy lento)
-        runAction?.fadeOut(0.15);   // ← Antes 0.6
-        jumpAction?.fadeOut(0.15);  // ← Antes 0.6
+        walkAction?.fadeOut(0.15);
+        runAction?.fadeOut(0.15);
+        jumpAction?.fadeOut(0.15);
         
         if (idleAction) {
           idleAction.reset();
           idleAction.play();
-          idleAction.fadeIn(0.15);  // ← Antes 0.8
+          idleAction.fadeIn(0.15);
         }
       }
     }
@@ -386,4 +435,3 @@ return (
     />
   );
 }
-
