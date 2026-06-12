@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
 
-const SalaIsla   = lazy(() => import("../scenes/Salaisla"));
+const SalaIsla   = lazy(() => import("../scenes/SalaIsla"));
 const SalaPlaya  = lazy(() => import("../scenes/SalaPlaya"));
 const SalaBosque = lazy(() => import("../scenes/SalaBosque"));
 const SalaValle  = lazy(() => import("../scenes/SalaValle"));
