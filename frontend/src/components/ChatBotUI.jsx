@@ -17,7 +17,10 @@ import {
 import "../styles/chatbot.css";
 
 const PIXEL_MODEL = "/models/pixel.glb";
-const BACKEND_URL = "https://accesibilidadweb.onrender.com";
+// En desarrollo el backend corre localmente. Para producción configura
+// VITE_BACKEND_URL (por ejemplo, en Vercel) con la URL pública del backend.
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ||
+  (import.meta.env.DEV ? "http://localhost:3001" : "https://accesibilidadweb.onrender.com");
 const MAX_HISTORY = 6;
 
 // =============================================================================
@@ -128,6 +131,24 @@ const generateContextSummary = (context) => {
   return parts.join("\n");
 };
 
+const getProgressContext = () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem("taison_progress_context"));
+    return saved && typeof saved === "object" ? saved : null;
+  } catch {
+    return null;
+  }
+};
+
+const getAvatarScreenContext = () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem("pixel_avatar_context"));
+    return saved && typeof saved.name === "string" ? saved : null;
+  } catch {
+    return null;
+  }
+};
+
 // =============================================================================
 // BUILD PROMPT DINÁMICO
 // =============================================================================
@@ -136,9 +157,11 @@ const BASE_PROMPT =
   "Eres Pixel, asistente de bienestar emocional para estudiantes de la EISC-Universidad del Valle. " +
   "Solo respondes sobre: bienestar emocional, estrés académico, ansiedad, técnicas de relajación, autocuidado. " +
   "Si preguntan sobre otros temas, responde amablemente que no puedes ayudar y redirige al bienestar. " +
-  "Personalidad: cálido, empático, optimista. Lenguaje informal pero respetuoso.";
+  "Personalidad: cálido, empático, optimista. Lenguaje informal pero respetuoso. " +
+  "Responde en español, de forma breve: uno o dos párrafos y, como máximo, tres recomendaciones. " +
+  "No uses tablas, Markdown ni listas extensas. Cierra siempre la idea sin dejar frases incompletas.";
 
-const buildDynamicPrompt = (emotion, userContext, routeKey) => {
+const buildDynamicPrompt = (emotion, userContext, routeKey, progressContext = null, avatarScreenContext = null) => {
   let scene;
   if (routeKey === "dashboard") {
     scene = DASHBOARD_CONTEXT;
@@ -157,6 +180,12 @@ const buildDynamicPrompt = (emotion, userContext, routeKey) => {
   const completedRooms  = userContext?.completedRooms?.length
     ? userContext.completedRooms.map(r => ROOM_NAMES[r] || r).join(", ")
     : "Ninguna sala explorada aún";
+  const progressDetails = progressContext
+    ? `Tiene ${progressContext.totalEvaluaciones} evaluaciones, promedio ${progressContext.promedio}/21 y su último estado es ${progressContext.ultimoEstado}.`
+    : "No hay evaluaciones registradas todavía.";
+  const avatarScreenDetails = avatarScreenContext
+    ? `Ahora está viendo a ${avatarScreenContext.name}, avatar ${avatarScreenContext.gender}. Su descripción es: ${avatarScreenContext.description}. ${avatarScreenContext.isSelected ? "Ya está seleccionado." : "Aún no está seleccionado."}`
+    : "No se pudo identificar el avatar que se muestra en este momento.";
 
   return BASE_PROMPT + `
     
@@ -174,6 +203,20 @@ const buildDynamicPrompt = (emotion, userContext, routeKey) => {
     - El usuario está en su Panel Principal
     - NO menciones Bosque, Playa, Valle o Isla a menos que el usuario los nombre
     - Enfócate en: progreso, estadísticas, cuestionarios, logros y metas
+    ` : routeKey === "avatar" ? `
+    - El usuario está en la página "Elige tu avatar", antes de entrar al escenario 3D de bienestar.
+    - Avatar que se muestra ahora: ${avatarScreenDetails}
+    - Si pregunta "ella quién es", "él quién es", "quién es este avatar" o usa una referencia similar, responde directamente con el nombre, género y breve descripción del avatar que se muestra ahora. No inventes otro personaje.
+    - Si pregunta "aquí qué hago", "qué puedo hacer" o usa una referencia similar, explica primero que debe explorar los personajes con las flechas, elegir uno tocando su tarjeta, y pulsar "Entrar al escenario 3D" para guardarlo y continuar.
+    - También puede filtrar los avatares por Masculino, Femenino o No binario, y usar los puntos inferiores para ir directamente a otro personaje.
+    - Aclara que el avatar solo representa al estudiante dentro del escenario y no cambia sus resultados emocionales.
+    - No describas esta página como una sala emocional ni des consejos genéricos sin explicar antes estas funciones.
+    ` : routeKey === "progreso" ? `
+    - El usuario está en la página "Tu progreso emocional".
+    - Si pregunta "aquí qué hago", "qué puedo hacer" o usa una referencia similar, explica primero que puede revisar sus tarjetas de evaluaciones, promedio, mejor resultado y último estado; consultar las gráficas y el historial; o pulsar "Nueva evaluación" para registrar un nuevo resultado.
+    - Si no tiene evaluaciones, indícale que debe usar el botón "Hacer mi primera evaluación".
+    - Datos actuales de esta página: ${progressDetails}
+    - No describas esta página como una sala emocional ni des consejos genéricos sin explicar antes sus funciones.
     ` : `
     - Usa el escenario actual como metáfora emocional
     - Reconoce los logros y salas completadas
@@ -195,8 +238,8 @@ const WELCOME_MESSAGES = {
   ansiedad:      "🐾 Woof... Bienvenido a la Isla de las Estrellas. Podemos recuperar la calma juntos.",
   questionnaire: "🐾 Woof! Estás completando tu autoevaluación emocional. Estoy aquí para acompañarte.",
   resultado:     "🐾 Woof! Ya tienes tus resultados. ¿Quieres que te ayude a entenderlos mejor?",
-  avatar:        "🐾 Woof! Estás eligiendo tu avatar. ¿Quieres saber más sobre alguno?",
-  progreso:      "🐾 Woof! Veamos tu progreso. ¡Sigue así!"
+  avatar:        "🐾 Woof! Aquí eliges el personaje que te representará. Explora las opciones, selecciona uno y pulsa «Entrar al escenario 3D». ¿Te ayudo a elegir?",
+  progreso:      "🐾 Woof! Aquí puedes revisar tus evaluaciones, gráficas e historial, o hacer una nueva evaluación. ¿Qué quieres conocer?"
 };
 
 const WELCOME_SIN_TEST = "🐾 Woof! Completa el cuestionario en el Dashboard primero.";
@@ -548,7 +591,13 @@ function ChatPanel({ emotion, userContext, onClose, panelRef, onTyping, routeKey
     setLoading(true);
 
     try {
-      const systemPrompt = buildDynamicPrompt(emotion, userContext, routeKey);
+      const systemPrompt = buildDynamicPrompt(
+        emotion,
+        userContext,
+        routeKey,
+        routeKey === "progreso" ? getProgressContext() : null,
+        routeKey === "avatar" ? getAvatarScreenContext() : null,
+      );
       const res = await fetch(`${BACKEND_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

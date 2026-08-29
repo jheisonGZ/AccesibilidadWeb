@@ -413,6 +413,19 @@ export default function AvatarSelect() {
 
   const current = filtered[index] ?? filtered[0];
 
+  // Pixel usa este dato para saber qué avatar está viendo el usuario ahora,
+  // incluso antes de que la selección se guarde al continuar.
+  useEffect(() => {
+    if (!current) return;
+    localStorage.setItem("pixel_avatar_context", JSON.stringify({
+      id: current.id,
+      name: current.name,
+      gender: current.gender,
+      description: current.desc,
+      isSelected: selected === current.id,
+    }));
+  }, [current, selected]);
+
   const goPrev = useCallback(() => {
     setIndex((i) => Math.max(0, i - 1));
     vibrateSelect();

@@ -12,6 +12,7 @@ import MobileControlsOverlay from "../components/3d/mobile/MobileControlsOverlay
 import RotatePrompt from "../components/3d/mobile/RotatePrompt";
 import { useMobileControls } from "../components/3d/mobile/useMobileControls";
 import { useLandscapeLock } from "../components/3d/mobile/useLandscapeLock";
+import DevPerf from "../components/3d/DevPerf";
 
 // ─────────────────────────────────────────────────────────
 // DATOS DE MISIONES - TÓTEMS DEL BOSQUE
@@ -905,6 +906,7 @@ export default function SalaBosque({ onSalir }) {
           }}
           frameloop={showRotatePrompt ? "never" : "always"}
         >
+           <DevPerf />
           <MisionScene
             playerRef={playerRef}
             mobileControls={mobileControls}

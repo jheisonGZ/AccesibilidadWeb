@@ -12,6 +12,7 @@ import RotatePrompt from "../components/3d/mobile/RotatePrompt";
 import { useMobileControls } from "../components/3d/mobile/useMobileControls";
 import { useLandscapeLock } from "../components/3d/mobile/useLandscapeLock";
 import Water from "../components/3d/water";
+import DevPerf from "../components/3d/DevPerf";
 
 // ─────────────────────────────────────────────────────────
 // DATOS DE MISIONES — BOTELLAS
@@ -818,6 +819,7 @@ const handleInteract = useCallback(() => {
           gl={{ powerPreference: "high-performance", onContextLost: (e) => e.preventDefault() }}
           frameloop={showRotatePrompt ? "never" : "always"}
         >
+           <DevPerf />
           <MisionScene
             playerRef={playerRef}
             mobileControls={mobileControls}
@@ -830,6 +832,7 @@ const handleInteract = useCallback(() => {
             onCofreOpenComplete={handleCofreOpenComplete}
             onCofreCloseComplete={handleCofreCloseComplete}
             cofreRef={cofreRef}
+            
           />
         </Canvas>
 

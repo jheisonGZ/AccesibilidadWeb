@@ -37,6 +37,9 @@ for (const key of REQUIRED_ENV) {
    ========================================================= */
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Permite cambiar el modelo sin modificar el código. El valor por defecto es
+// el reemplazo recomendado por Groq para llama-3.1-8b-instant.
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 
 /* =========================================================
    APP EXPRESS
@@ -165,9 +168,9 @@ app.post('/api/chat', async (req, res) => {
 
   try {
     const groqResponse = await groq.chat.completions.create({
-      model:       'llama-3.3-70b-versatile',
+      model: GROQ_MODEL,
       temperature: 0.7,
-      max_tokens:  1000,
+      max_tokens:  600,
       messages: [
         { role: 'system', content: system.trim() },
         ...cleanMessages,

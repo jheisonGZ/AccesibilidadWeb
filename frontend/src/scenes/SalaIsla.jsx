@@ -12,6 +12,7 @@ import RotatePrompt from "../components/3d/mobile/RotatePrompt";
 import { useMobileControls } from "../components/3d/mobile/useMobileControls";
 import { useLandscapeLock } from "../components/3d/mobile/useLandscapeLock";
 import Water from "../components/3d/water";
+import DevPerf from "../components/3d/DevPerf";
 
 // ─────────────────────────────────────────────────────────
 // DATOS DE MISIONES — CRISTALES
@@ -779,7 +780,9 @@ export default function SalaIsla({ onSalir }) {
       <div style={{ width: "100vw", height: "100vh", overflow: "hidden", position: "absolute", inset: 0, visibility: showRotatePrompt ? "hidden" : "visible", pointerEvents: showRotatePrompt ? "none" : "auto" }}>
         <Canvas style={{ width: "100%", height: "100%" }} camera={{ position: [0, 2, 10], fov: 60 }} shadows gl={{ powerPreference: "high-performance", onContextLost: (e) => e.preventDefault() }} frameloop={showRotatePrompt ? "never" : "always"}>
           <MisionScene playerRef={playerRef} mobileControls={mobileControls} collectedIds={collectedIds} onCristalNearby={handleCristalNearby} nearbyCristalId={nearbyCristalId} onCofreNearby={handleCofreNearby} allCollected={allCollected} cofreAbierto={cofreAbierto} onCofreOpenComplete={handleCofreOpenComplete} onCofreCloseComplete={handleCofreCloseComplete} cofreRef={cofreRef} />
+          <DevPerf />
         </Canvas>
+        
         {!modalOpen && <HUDMision collectedIds={collectedIds} showECristal={showECristal} showECofre={showECofre} isMobile={isMobile} onInteractMobile={handleInteract} cofreYaAbierto={cofreYaAbierto} misionCompletada={misionCompletadaPreviamente} />}
         {isMobile && !showRotatePrompt && !modalOpen && <MobileControlsOverlay controls={mobileControls} />}
         {modalMisionCompletada && <ModalMisionCompletada onContinuar={handleContinuarExplorando} onSalir={handleSalirDashboard} />}

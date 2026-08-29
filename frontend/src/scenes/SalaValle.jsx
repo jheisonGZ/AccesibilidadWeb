@@ -12,6 +12,7 @@ import MobileControlsOverlay from "../components/3d/mobile/MobileControlsOverlay
 import RotatePrompt from "../components/3d/mobile/RotatePrompt";
 import { useMobileControls } from "../components/3d/mobile/useMobileControls";
 import { useLandscapeLock } from "../components/3d/mobile/useLandscapeLock";
+import DevPerf from "../components/3d/DevPerf";
 
 
 // ─────────────────────────────────────────────────────────
@@ -897,6 +898,7 @@ export default function SalaValle({ onSalir }) {
           }}
           frameloop={showRotatePrompt ? "never" : "always"}
         >
+           <DevPerf />
           <MisionScene
             playerRef={playerRef}
             mobileControls={mobileControls}
