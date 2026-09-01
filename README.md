@@ -1,7 +1,7 @@
 <h1 align="center">
   Aplicación Web Interactiva con Principios de Accesibilidad para apoyar el Bienestar Emocional de Estudiantes Universitarios
 </h1>
-<img width="1698" height="926" alt="eb47aeb0-6e5a-47e7-8dd3-1e85c0dd24bf" src="https://github.com/user-attachments/assets/369d23bf-0423-4800-971f-b54cca2f7bff" />
+<img width="1536" height="1024" alt="32e5d9a2-c6bf-4a08-8810-3a21ab7e0d99" src="https://github.com/user-attachments/assets/a08d1e4a-52d3-49fc-9da8-4ed41d664e92" />
 
 ---
 
